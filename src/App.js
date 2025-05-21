@@ -12,10 +12,8 @@ function App() {
     <Router>
       <div className="overflow-x-hidden">
         <Routes>
-          /* Login page without Navbar */
           <Route path="/login" element={<Login />} />
           
-          /* Other pages with Navbar */
           <Route
             path="/"
             element={

@@ -6,6 +6,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Home from './pages/Home';
 import Guides from './pages/Guides';
+import Signup from './pages/Signup';
 
 function App() {
   return (
@@ -13,7 +14,7 @@ function App() {
       <div className="overflow-x-hidden">
         <Routes>
           <Route path="/login" element={<Login />} />
-          
+          <Route path="/signup" element={<Signup />} />
           <Route
             path="/"
             element={

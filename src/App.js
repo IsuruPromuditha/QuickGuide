@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Guides from './pages/Guides';
 import Signup from './pages/Signup';
 import GuideProfileView from './pages/GuideProfileView';
+import GuideBooking from './components/GuideBooking';
 
 
 
@@ -61,6 +62,15 @@ function App() {
               <>
                 <Navbar />
                 <GuideProfileView />
+              </>
+            }
+          />
+          <Route
+            path="/guidebooking"
+            element={
+              <>
+                <Navbar />
+                <GuideBooking />
               </>
             }
           />

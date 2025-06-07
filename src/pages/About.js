@@ -1,5 +1,7 @@
 import React from 'react';
 import { GiSriLanka } from 'react-icons/gi';
+import cultureImg from '../assets/profile.jpg';
+
 
 const About = () => {
   return (
@@ -22,7 +24,7 @@ const About = () => {
         </div>
         <div className="md:w-1/2">
           <img
-            src="https://images.unsplash.com/photo-1519606428-d3c4c3a47c8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80"
+            src={cultureImg}
             alt="Sri Lankan culture"
             className="rounded-lg shadow-lg w-full h-64 object-cover"
           />

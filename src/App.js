@@ -7,6 +7,9 @@ import Contact from './pages/Contact';
 import Home from './pages/Home';
 import Guides from './pages/Guides';
 import Signup from './pages/Signup';
+import GuideProfileView from './pages/GuideProfileView';
+
+
 
 function App() {
   return (
@@ -51,6 +54,17 @@ function App() {
               </>
             }
           />
+          
+          <Route
+            path="/guideprofileview"
+            element={
+              <>
+                <Navbar />
+                <GuideProfileView />
+              </>
+            }
+          />
+          
         </Routes>
       </div>
     </Router>

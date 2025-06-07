@@ -9,6 +9,8 @@ import Guides from './pages/Guides';
 import Signup from './pages/Signup';
 import GuideProfileView from './pages/GuideProfileView';
 import GuideBooking from './components/GuideBooking';
+import GuideRequestInbox from './components/GuideRequest';
+
 
 
 
@@ -74,6 +76,16 @@ function App() {
               </>
             }
           />
+          <Route
+            path="/guiderequst"
+            element={
+              <>
+                <Navbar />
+                <GuideRequestInbox />
+              </>
+            }
+          />
+          
           
         </Routes>
       </div>

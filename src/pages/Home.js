@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaGlobe, FaSearch } from 'react-icons/fa';
 
-import coverImage from '../assets/profile1.jpg';
+import coverImage from '../assets/HomeBG.jpg';
 import destination1 from '../assets/profile2.jpg';
 import destination2 from '../assets/profile3.jpg';
 import destination3 from '../assets/profile4.jpg';

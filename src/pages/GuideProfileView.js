@@ -1,5 +1,9 @@
 import React from 'react';
 import { FaStar, FaTiktok, FaFacebook, FaInstagram } from 'react-icons/fa';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import { Pagination } from 'swiper/modules';
 
 // Import dummy local images
 import coverPhoto from '../assets/Coverphoto.jpeg';
@@ -23,6 +27,21 @@ const GuideProfileView = () => {
     },
     gallery: [gallery1, gallery2, gallery3],
   };
+
+  const testimonials = [
+    {
+      name: 'John Doe',
+      comment: 'Revive was an amazing guide! Very knowledgeable and friendly.',
+    },
+    {
+      name: 'Emily Smith',
+      comment: 'Loved the experience! Highly recommended for cultural tours.',
+    },
+    {
+      name: 'Michael Lee',
+      comment: 'Professional and engaging. Learned a lot about Sri Lanka’s heritage.',
+    },
+  ];
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -74,7 +93,7 @@ const GuideProfileView = () => {
       </div>
 
       {/* Gallery */}
-      <div className="mt-10">
+      <div className="mt-16">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Gallery</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {guide.gallery.map((photo, index) => (
@@ -86,6 +105,27 @@ const GuideProfileView = () => {
             />
           ))}
         </div>
+      </div>
+
+      {/* Testimonials */}
+      <div className="mt-16">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Testimonials</h2>
+        <Swiper
+          modules={[Pagination]}
+          spaceBetween={20}
+          slidesPerView={1}
+          pagination={{ clickable: true }}
+          className="max-w-2xl mx-auto"
+        >
+          {testimonials.map((testimonial, index) => (
+            <SwiperSlide key={index}>
+              <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+                <p className="text-gray-700 italic mb-4">“{testimonial.comment}”</p>
+                <h4 className="text-gray-800 font-bold">{testimonial.name}</h4>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </div>
   );

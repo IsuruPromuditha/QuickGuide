@@ -10,6 +10,7 @@ import Signup from './pages/Signup';
 import GuideProfileView from './pages/GuideProfileView';
 import GuideBooking from './components/GuideBooking';
 import GuideRequestInbox from './components/GuideRequest';
+import TouristSignup from './pages/TouristRegister';
 
 
 
@@ -82,6 +83,15 @@ function App() {
               <>
                 <Navbar />
                 <GuideRequestInbox />
+              </>
+            }
+          />
+          <Route
+            path="/touirstRegister"
+            element={
+              <>
+                <Navbar />
+                <TouristSignup />
               </>
             }
           />

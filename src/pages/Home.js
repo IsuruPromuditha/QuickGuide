@@ -7,7 +7,7 @@ import destination2 from '../assets/profile3.jpg';
 import destination3 from '../assets/profile4.jpg';
 
 const Home = () => {
-  const sliderImages = [destination1, destination2, destination3];
+  const sliderImages = [destination1, destination2, destination3, destination1, destination2, destination3,, destination2, destination3];
 
   return (
     <div className="w-full">
@@ -49,16 +49,27 @@ const Home = () => {
       </div>
 
       {/* Image Grid */}
-      <div className="max-w-5xl mx-auto mt-12 px-4">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4">Top Destinations</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {sliderImages.map((img, index) => (
-            <div key={index} className="rounded-xl overflow-hidden shadow-lg">
-              <img src={img} alt={`Destination ${index + 1}`} className="w-full h-48 object-cover" />
-            </div>
-          ))}
+      {/* Top Destinations */}
+<div className="max-w-6xl mx-auto mt-12 px-4">
+  <h2 className="text-3xl font-bold text-gray-800 mb-6">Top Destinations</h2>
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    {sliderImages.map((img, index) => (
+      <div key={index} className="relative rounded-2xl overflow-hidden shadow-xl group hover:shadow-2xl transition duration-300">
+        <img
+          src={img}
+          alt={`Destination ${index + 1}`}
+          className="w-full h-56 object-cover transform group-hover:scale-105 transition duration-300"
+        />
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-300">
+          <p className="text-white text-lg font-semibold">
+            Destination {index + 1}
+          </p>
         </div>
       </div>
+    ))}
+  </div>
+</div>
+
     </div>
   );
 };

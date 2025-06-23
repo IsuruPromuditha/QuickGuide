@@ -15,6 +15,7 @@ import MapView from './pages/mapView';
 import Leaderboard from './pages/Leaderboard';
 import TouristView from './pages/TouristView';
 import SocialGroups from './pages/SocialGroups';
+import AdminDashboard from './pages/AdminDashboard';
 
 
 
@@ -132,6 +133,15 @@ function App() {
               <>
                 <Navbar />
                 <SocialGroups />
+              </>
+            }
+          />
+          <Route
+            path="/adminDashboard"
+            element={
+              <>
+                
+                <AdminDashboard />
               </>
             }
           />

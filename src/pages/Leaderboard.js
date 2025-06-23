@@ -5,7 +5,7 @@ import { FaMedal } from 'react-icons/fa';
 const leaderboardData = [
   {
     id: 1,
-    name: 'Saman Perera',
+    name: ' Perera',
     country: 'Sri Lanka',
     points: 980,
     image: 'https://randomuser.me/api/portraits/men/32.jpg',

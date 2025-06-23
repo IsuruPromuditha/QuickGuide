@@ -106,6 +106,15 @@ function App() {
               </>
             }
           />
+          <Route
+            path="/mapView"
+            element={
+              <>
+                <Navbar />
+                <MapView />
+              </>
+            }
+          />
           
           
         </Routes>

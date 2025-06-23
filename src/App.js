@@ -13,6 +13,8 @@ import GuideRequestInbox from './components/GuideRequest';
 import TouristSignup from './pages/TouristRegister';
 import MapView from './pages/mapView';
 import Leaderboard from './pages/Leaderboard';
+import TouristView from './pages/TouristView';
+import SocialGroups from './pages/SocialGroups';
 
 
 
@@ -112,6 +114,24 @@ function App() {
               <>
                 <Navbar />
                 <MapView />
+              </>
+            }
+          />
+          <Route
+            path="/TouristView"
+            element={
+              <>
+                <Navbar />
+                <TouristView />
+              </>
+            }
+          />
+          <Route
+            path="/socialgroup"
+            element={
+              <>
+                <Navbar />
+                <SocialGroups />
               </>
             }
           />

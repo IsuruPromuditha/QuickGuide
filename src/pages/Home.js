@@ -2,12 +2,12 @@ import React from 'react';
 import { FaGlobe, FaSearch } from 'react-icons/fa';
 
 import coverImage from '../assets/HomeBG.jpg';
-import destination1 from '../assets/profile2.jpg';
-import destination2 from '../assets/profile3.jpg';
-import destination3 from '../assets/profile4.jpg';
+import Anuradhapura from '../assets/Anuradhapura.jpg';
+import destination2 from '../assets/Colombo.jpg';
+import destination3 from '../assets/Mirissa.jpg';
 
 const Home = () => {
-  const sliderImages = [destination1, destination2, destination3, destination1, destination2, destination3,, destination2, destination3];
+  const sliderImages = [Anuradhapura, destination2, destination3, Anuradhapura, destination2, destination3,, destination2, destination3];
 
   return (
     <div className="w-full">

@@ -11,6 +11,8 @@ import GuideProfileView from './pages/GuideProfileView';
 import GuideBooking from './components/GuideBooking';
 import GuideRequestInbox from './components/GuideRequest';
 import TouristSignup from './pages/TouristRegister';
+import MapView from './pages/mapView';
+import Leaderboard from './pages/Leaderboard';
 
 
 
@@ -92,6 +94,15 @@ function App() {
               <>
                 <Navbar />
                 <TouristSignup />
+              </>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <>
+                <Navbar />
+                <Leaderboard />
               </>
             }
           />

@@ -48,7 +48,32 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Image Grid */}
+    {/* Tour Guide Categories */}
+<div className="max-w-7xl mx-auto mt-12 px-4">
+  
+  <div className="flex flex-wrap gap-4 justify-between">
+    {[
+      { emoji: '🏞️', label: 'Nature' },
+      { emoji: '🏛️', label: 'History' },
+      { emoji: '🌊', label: 'Beach' },
+      { emoji: '🍛', label: 'Food' },
+      { emoji: '🛍️', label: 'Shopping' },
+      { emoji: '🧗', label: 'Adventure' },
+      { emoji: '🕌', label: 'Cultural' },
+      { emoji: '🚴', label: 'Sports' },
+    ].map((category, index) => (
+      <button
+        key={index}
+        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-300 shadow hover:bg-primary hover:text-white transition duration-200"
+      >
+        <span className="text-lg">{category.emoji}</span>
+        <span className="text-sm font-medium">{category.label}</span>
+      </button>
+    ))}
+  </div>
+</div>
+
+    
       {/* Top Destinations */}
 <div className="max-w-6xl mx-auto mt-12 px-4">
   <h2 className="text-3xl font-bold text-gray-800 mb-6">Top Destinations</h2>

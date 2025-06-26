@@ -5,6 +5,7 @@ import profileImage from '../assets/HomeBG.jpg';
 import gallery1 from '../assets/Anuradhapura.jpg';
 import gallery2 from '../assets/Colombo.jpg';
 import gallery3 from '../assets/Mirissa.jpg';
+import { Link } from 'react-router-dom';
 
 
 
@@ -98,9 +99,11 @@ const GuideProfile = () => {
 
         {/* Contact/Booking */}
         <div className="mt-8 text-center">
+          <Link to="/guidebooking">
           <button className="bg-primary hover:bg-secondary text-white font-semibold px-6 py-3 rounded-md shadow-md transition duration-300">
             Contact / Book Now
           </button>
+          </Link>
         </div>
       </div>
     </div>

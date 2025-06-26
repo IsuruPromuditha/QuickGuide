@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaStar, FaTiktok, FaFacebook, FaInstagram } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 // GuideCard Component: Displays a single guide's information
 const GuideCard = ({ guide }) => {
@@ -53,6 +54,11 @@ const GuideCard = ({ guide }) => {
             </a>
           )}
         </div>
+        <Link
+          to="/guideprofileview">
+          <button className="mt-auto text-center bg-blue-600 text-white py-2 px-4 rounded-full hover:bg-blue-700 transition duration-200">View Profile</button>
+          
+        </Link>
       </div>
     </div>
   );

@@ -145,6 +145,15 @@ function App() {
               </>
             }
           />
+          <Route
+            path="/toristSignUpPage"
+            element={
+              <>
+                
+                <TouristSignup />
+              </>
+            }
+          />
           
           
         </Routes>

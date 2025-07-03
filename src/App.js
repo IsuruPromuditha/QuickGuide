@@ -6,11 +6,10 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Home from './pages/Home';
 import Guides from './pages/Guides';
-import Signup from './pages/Signup';
+import TouristSignup from './pages/TouristSignup';
 import GuideProfileView from './pages/GuideProfileView';
 import GuideBooking from './components/GuideBooking';
 import GuideRequestInbox from './components/GuideRequest';
-import TouristSignup from './pages/TouristRegister';
 import MapView from './pages/mapView';
 import Leaderboard from './pages/Leaderboard';
 import TouristView from './pages/TouristView';
@@ -26,7 +25,7 @@ function App() {
       <div className="overflow-x-hidden">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/tourist-registeration" element={<TouristSignup />} />
           <Route
             path="/"
             element={
@@ -92,15 +91,6 @@ function App() {
             }
           />
           <Route
-            path="/touirstRegister"
-            element={
-              <>
-                <Navbar />
-                <TouristSignup />
-              </>
-            }
-          />
-          <Route
             path="/leaderboard"
             element={
               <>
@@ -142,15 +132,6 @@ function App() {
               <>
                 
                 <AdminDashboard />
-              </>
-            }
-          />
-          <Route
-            path="/toristSignUpPage"
-            element={
-              <>
-                
-                <TouristSignup />
               </>
             }
           />

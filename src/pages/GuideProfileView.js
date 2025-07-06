@@ -23,10 +23,11 @@ const GuideProfileView = () => {
   const [gallery, setGallery] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(profile);
-  const [newPost, setNewPost] = useState({ title: '', image: null, caption: '', location: '' });
+  const [newPost, setNewPost] = useState({ title: '', images: [], caption: '', location: '' });
   const [showAddPost, setShowAddPost] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [newGalleryImage, setNewGalleryImage] = useState(null);
+  const [showAddGalleryImage, setShowAddGalleryImage] = useState(false);
 
   useEffect(() => {
     const fetchGuideData = async () => {
@@ -35,12 +36,11 @@ const GuideProfileView = () => {
         if (token) {
           const decoded = jwtDecode(token);
           if (decoded.id && decoded.role === 'guide') {
-            // Fetch guide profile
             const guideResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             const guideData = guideResponse.data;
-            console.log('Guide data:', guideData); // Debug log
+            console.log('Guide data:', guideData);
             setProfile({
               ...guideData,
               categories: guideData.categories ? JSON.parse(guideData.categories) : [],
@@ -58,18 +58,16 @@ const GuideProfileView = () => {
               profileImage: guideData.profile_image || '/api/placeholder/400/400'
             });
 
-            // Fetch posts
             const postsResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            console.log('Posts data:', postsResponse.data); // Debug log
+            console.log('Posts data:', postsResponse.data);
             setPosts(postsResponse.data);
 
-            // Fetch gallery
             const galleryResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/gallery`, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            console.log('Gallery data:', galleryResponse.data); // Debug log
+            console.log('Gallery data:', galleryResponse.data);
             setGallery(galleryResponse.data);
           }
         }
@@ -110,7 +108,7 @@ const GuideProfileView = () => {
       const response = await axios.put(`http://localhost:5000/api/guide/guide/${decoded.id}`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      console.log('Update response:', response.data); // Debug log
+      console.log('Update response:', response.data);
 
       setProfile({
         ...editForm,
@@ -143,7 +141,7 @@ const GuideProfileView = () => {
   };
 
   const handleAddPost = async () => {
-    if (newPost.title && newPost.image && newPost.caption && newPost.location) {
+    if (newPost.title && newPost.images.length > 0 && newPost.caption && newPost.location) {
       try {
         const token = localStorage.getItem('token');
         const decoded = jwtDecode(token);
@@ -151,60 +149,84 @@ const GuideProfileView = () => {
         formData.append('title', newPost.title);
         formData.append('caption', newPost.caption);
         formData.append('location', newPost.location);
-        formData.append('image', newPost.image);
-        console.log('Post FormData:', formData.get('image')); // Debug log
+        newPost.images.forEach((image, index) => {
+          formData.append('images', image);
+        });
+        console.log('Post FormData:', Array.from(formData.entries()));
 
         const response = await axios.post(`http://localhost:5000/api/guide/guide/${decoded.id}/post`, formData, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
 
-        setPosts([{
+        // Fetch the new post's images
+        const postResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const newPostData = postResponse.data.find(post => post.id === response.data.postId);
+
+        setPosts([newPostData || {
           id: response.data.postId,
           title: newPost.title,
-          image: response.data.image || `/posts/${newPost.image.name}`, // Use server-provided path
+          images: newPost.images.map(image => `/posts/${image.name}`),
           caption: newPost.caption,
           location: newPost.location,
           created_at: new Date().toISOString()
         }, ...posts]);
-        setNewPost({ title: '', image: null, caption: '', location: '' });
+        setNewPost({ title: '', images: [], caption: '', location: '' });
         setShowAddPost(false);
         toast.success('Post added successfully');
       } catch (error) {
-        console.error('Error adding post:', error);
-        toast.error('Failed to add post');
+        console.error('Error adding post:', error.response?.data || error.message);
+        toast.error(`Failed to add post: ${error.response?.data?.error || error.message}`);
       }
     } else {
-      toast.error('All fields are required');
+      toast.error('All fields and at least one image are required');
     }
   };
 
   const handleDeletePost = async (postId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/guide/post/${postId}`, {
+      const response = await axios.delete(`http://localhost:5000/api/guide/post/${postId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('Delete post response:', response.data);
       setPosts(posts.filter(post => post.id !== postId));
       toast.success('Post deleted successfully');
     } catch (error) {
-      console.error('Error deleting post:', error);
-      toast.error('Failed to delete post');
+      console.error('Error deleting post:', error.response?.data || error.message);
+      toast.error(`Failed to delete post: ${error.response?.data?.error || error.message}`);
     }
   };
 
   const handleProfileImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      console.log('Selected profile image:', file); // Debug log
+      console.log('Selected profile image:', file);
       setEditForm({ ...editForm, profileImage: file });
     }
   };
 
   const handlePostImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length > 0) {
+      console.log('Selected post images:', files);
+      setNewPost({ ...newPost, images: files });
+    }
+  };
+
+  const handleRemovePostImage = (index) => {
+    setNewPost({
+      ...newPost,
+      images: newPost.images.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleGalleryImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      console.log('Selected post image:', file); // Debug log
-      setNewPost({ ...newPost, image: file });
+      console.log('Selected gallery image:', file);
+      setNewGalleryImage(file);
     }
   };
 
@@ -215,7 +237,7 @@ const GuideProfileView = () => {
         const decoded = jwtDecode(token);
         const formData = new FormData();
         formData.append('image', newGalleryImage);
-        console.log('Gallery FormData:', formData.get('image')); // Debug log
+        console.log('Gallery FormData:', formData.get('image'));
 
         const response = await axios.post(`http://localhost:5000/api/guide/guide/${decoded.id}/gallery`, formData, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
@@ -223,14 +245,15 @@ const GuideProfileView = () => {
 
         setGallery([{
           id: response.data.imageId,
-          image: response.data.image || `/posts/${newGalleryImage.name}`, // Use server-provided path
+          image: response.data.image,
           created_at: new Date().toISOString()
         }, ...gallery]);
         setNewGalleryImage(null);
+        setShowAddGalleryImage(false);
         toast.success('Gallery image added successfully');
       } catch (error) {
-        console.error('Error adding gallery image:', error);
-        toast.error('Failed to add gallery image');
+        console.error('Error adding gallery image:', error.response?.data || error.message);
+        toast.error(`Failed to add gallery image: ${error.response?.data?.error || error.message}`);
       }
     } else {
       toast.error('Please select an image');
@@ -246,8 +269,8 @@ const GuideProfileView = () => {
       setGallery(gallery.filter(img => img.id !== imageId));
       toast.success('Gallery image deleted successfully');
     } catch (error) {
-      console.error('Error deleting gallery image:', error);
-      toast.error('Failed to delete gallery image');
+      console.error('Error deleting gallery image:', error.response?.data || error.message);
+      toast.error(`Failed to delete gallery image: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -356,7 +379,6 @@ const GuideProfileView = () => {
                   </>
                 )}
 
-                {/* Categories */}
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Specializations</h3>
                   <div className="flex flex-wrap gap-2">
@@ -396,7 +418,6 @@ const GuideProfileView = () => {
                   </div>
                 </div>
 
-                {/* Rating */}
                 <div className="flex items-center gap-2 text-yellow-500 mb-4">
                   {[...Array(5)].map((_, i) => (
                     <FaStar
@@ -407,7 +428,6 @@ const GuideProfileView = () => {
                   <span className="text-gray-600 ml-2">({profile.rating}/5 from {profile.reviews} reviews)</span>
                 </div>
 
-                {/* Social Media */}
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Social Media</h3>
                   {isEditing ? (
@@ -458,7 +478,6 @@ const GuideProfileView = () => {
             </div>
           </div>
 
-          {/* Posts Section */}
           <div className="bg-white shadow-lg rounded-xl p-6 mb-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">Recent Posts</h2>
@@ -471,7 +490,6 @@ const GuideProfileView = () => {
               </button>
             </div>
 
-            {/* Add Post Form */}
             {showAddPost && (
               <div className="bg-gray-50 p-4 rounded-lg mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Add New Post</h3>
@@ -500,26 +518,37 @@ const GuideProfileView = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Images (select multiple)</label>
                     <label className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-md hover:border-orange-600 cursor-pointer transition duration-300">
                       <div className="text-center">
                         <FaImage className="mx-auto text-gray-400 mb-2" size={24} />
-                        <p className="text-sm text-gray-600">Click to upload image</p>
+                        <p className="text-sm text-gray-600">Click to upload images</p>
                       </div>
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={handlePostImageUpload}
                         className="hidden"
                       />
                     </label>
-                    {newPost.image && (
-                      <div className="mt-2">
-                        <img
-                          src={URL.createObjectURL(newPost.image)}
-                          alt="Post Preview"
-                          className="w-24 h-24 object-cover rounded-md"
-                        />
+                    {newPost.images.length > 0 && (
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        {newPost.images.map((image, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={URL.createObjectURL(image)}
+                              alt={`Post Preview ${index}`}
+                              className="w-24 h-24 object-cover rounded-md"
+                            />
+                            <button
+                              onClick={() => handleRemovePostImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300"
+                            >
+                              <FaTimes size={10} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -541,7 +570,10 @@ const GuideProfileView = () => {
                       Add Post
                     </button>
                     <button
-                      onClick={() => setShowAddPost(false)}
+                      onClick={() => {
+                        setShowAddPost(false);
+                        setNewPost({ title: '', images: [], caption: '', location: '' });
+                      }}
                       className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition duration-300"
                     >
                       Cancel
@@ -551,19 +583,23 @@ const GuideProfileView = () => {
               </div>
             )}
 
-            {/* Posts Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.map((post) => (
                 <div key={post.id} className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
-                  <img
-                    src={`http://localhost:5000${post.image}`}
-                    alt={post.title}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      console.error('Image load error:', post.image);
-                      e.target.src = '/api/placeholder/400/400';
-                    }}
-                  />
+                  <div className="grid grid-cols-2 gap-2 p-2">
+                    {post.images && post.images.map((image, index) => (
+                      <img
+                        key={index}
+                        src={`http://localhost:5000${image}`}
+                        alt={`${post.title} ${index}`}
+                        className="w-full h-24 object-cover rounded-md"
+                        onError={(e) => {
+                          console.error('Image load error:', image);
+                          e.target.src = '/api/placeholder/400/400';
+                        }}
+                      />
+                    ))}
+                  </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-lg text-gray-800 mb-2">{post.title}</h3>
                     <div className="flex items-center text-sm text-gray-500 mb-2">
@@ -586,33 +622,68 @@ const GuideProfileView = () => {
             </div>
           </div>
 
-          {/* Gallery Section */}
           <div className="bg-white shadow-lg rounded-xl p-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">Tour Gallery</h2>
-              {isEditing && (
-                <div className="flex items-center gap-2">
-                  <label className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md flex items-center gap-2 cursor-pointer transition duration-300">
-                    <FaPlus size={16} />
-                    Add Image
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setNewGalleryImage(e.target.files[0])}
-                      className="hidden"
-                    />
-                  </label>
-                  {newGalleryImage && (
+              <button
+                onClick={() => setShowAddGalleryImage(!showAddGalleryImage)}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition duration-300"
+              >
+                <FaPlus size={16} />
+                Add Gallery Image
+              </button>
+            </div>
+
+            {showAddGalleryImage && (
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Add New Gallery Image</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                    <label className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-md hover:border-orange-600 cursor-pointer transition duration-300">
+                      <div className="text-center">
+                        <FaImage className="mx-auto text-gray-400 mb-2" size={24} />
+                        <p className="text-sm text-gray-600">Click to upload image</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleGalleryImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {newGalleryImage && (
+                      <div className="mt-2">
+                        <img
+                          src={URL.createObjectURL(newGalleryImage)}
+                          alt="Gallery Preview"
+                          className="w-24 h-24 object-cover rounded-md"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
                     <button
                       onClick={handleAddGalleryImage}
                       className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition duration-300"
+                      disabled={!newGalleryImage}
                     >
                       Upload
                     </button>
-                  )}
+                    <button
+                      onClick={() => {
+                        setShowAddGalleryImage(false);
+                        setNewGalleryImage(null);
+                      }}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition duration-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {gallery.map((img) => (
                 <div key={img.id} className="relative">

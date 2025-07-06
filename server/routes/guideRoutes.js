@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Routes
+
 router.get('/guide/:id', authenticateToken, authorizeGuide, getGuide);
 router.put('/guide/:id', authenticateToken, authorizeGuide, upload.single('profileImage'), updateGuide);
 router.post('/guide/:id/post', authenticateToken, authorizeGuide, upload.single('image'), addPost);

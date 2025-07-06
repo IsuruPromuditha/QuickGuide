@@ -1,13 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaUser, FaCalendarAlt, FaChartBar, FaCog, FaBars, FaTimes } from 'react-icons/fa';
+import { jwtDecode } from 'jwt-decode';
+import axios from 'axios';
 
 const GuideNavbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [guideName, setGuideName] = useState('');
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  useEffect(() => {
+    const fetchGuideName = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const decoded = jwtDecode(token);
+          if (decoded.id && decoded.role === 'guide') {
+            const response = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            setGuideName(response.data.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching guide name:', error);
+      }
+    };
+
+    fetchGuideName();
+  }, []);
 
   return (
     <nav className="bg-orange-600 shadow-lg">
@@ -48,6 +74,9 @@ const GuideNavbar = () => {
               <FaCog size={16} />
               Settings
             </Link>
+            <span className="text-white text-sm font-medium">
+              {guideName || 'Guide'}
+            </span>
             <button className="bg-orange-700 hover:bg-orange-800 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300">
               Logout
             </button>
@@ -100,6 +129,9 @@ const GuideNavbar = () => {
                 <FaCog size={16} />
                 Settings
               </Link>
+              <span className="text-white block px-3 py-2 text-base font-medium">
+                {guideName || 'Guide'}
+              </span>
               <button className="bg-orange-800 hover:bg-orange-900 text-white w-full text-left px-3 py-2 rounded-md text-base font-medium transition duration-300">
                 Logout
               </button>

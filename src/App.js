@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar';
@@ -22,136 +22,145 @@ import TouristView from './pages/TouristView';
 import SocialGroups from './pages/SocialGroups';
 import AdminDashboard from './pages/AdminDashboard';
 
+const ProtectedRoute = ({ children, role }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        return <Navigate to="/login" />;
+    }
+    // Note: For full role-based protection, you would need to decode the token to verify the role
+    return children;
+};
+
 function App() {
-  return (
-    <Router>
-      <div className="overflow-x-hidden">
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick pauseOnHover />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<UserSelection />} />
-          <Route path="/tourist-registeration" element={<TouristSignup />} />
-          <Route path="/guide-registeration" element={<GuideSignup />} />
-          <Route
-            path="/"
-            element={
-              <>
-                <Navbar />
-                <Home />
-              </>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <>
-                <Navbar />
-                <About />
-              </>
-            }
-          />
-          <Route
-            path="/contact"
-            element={
-              <>
-                <Navbar />
-                <Contact />
-              </>
-            }
-          />
-          <Route
-            path="/guides"
-            element={
-              <>
-                <Navbar />
-                <Guides />
-              </>
-            }
-          />
-          <Route
-            path="/tourist-guideprofileview"
-            element={
-              <>
-                <Navbar />
-                <TouristGuideProfileView />
-              </>
-            }
-          />
-          <Route
-            path="/guideprofileview"
-            element={
-              <>
-                <GuideNavbar />
-                <GuideProfileView />
-              </>
-            }
-          />
-          <Route
-            path="/guidebooking"
-            element={
-              <>
-                <Navbar />
-                <GuideBooking />
-              </>
-            }
-          />
-          <Route
-            path="/guiderequst"
-            element={
-              <>
-                <Navbar />
-                <GuideRequestInbox />
-              </>
-            }
-          />
-          <Route
-            path="/leaderboard"
-            element={
-              <>
-                <Navbar />
-                <Leaderboard />
-              </>
-            }
-          />
-          <Route
-            path="//mapView"
-            element={
-              <>
-                <Navbar />
-                <MapView />
-              </>
-            }
-          />
-          <Route
-            path="/TouristView"
-            element={
-              <>
-                <Navbar />
-                <TouristView />
-              </>
-            }
-          />
-          <Route
-            path="/socialgroup"
-            element={
-              <>
-                <Navbar />
-                <SocialGroups />
-              </>
-            }
-          />
-          <Route
-            path="/adminDashboard"
-            element={
-              <>
-                <AdminDashboard />
-              </>
-            }
-          />
-        </Routes>
-      </div>
-    </Router>
-  );
+    return (
+        <Router>
+            <div className="overflow-x-hidden">
+                <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick pauseOnHover />
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<UserSelection />} />
+                    <Route path="/tourist-registeration" element={<TouristSignup />} />
+                    <Route path="/guide-registeration" element={<GuideSignup />} />
+                    <Route
+                        path="/"
+                        element={
+                            <>
+                                <Navbar />
+                                <Home />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/about"
+                        element={
+                            <>
+                                <Navbar />
+                                <About />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/contact"
+                        element={
+                            <>
+                                <Navbar />
+                                <Contact />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/guides"
+                        element={
+                            <>
+                                <Navbar />
+                                <Guides />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/tourist-guideprofileview"
+                        element={
+                            <>
+                                <Navbar />
+                                <TouristGuideProfileView />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/guideprofileview"
+                        element={
+                            <ProtectedRoute role="guide">
+                                <GuideNavbar />
+                                <GuideProfileView />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/guidebooking"
+                        element={
+                            <>
+                                <Navbar />
+                                <GuideBooking />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/guiderequst"
+                        element={
+                            <>
+                                <Navbar />
+                                <GuideRequestInbox />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/leaderboard"
+                        element={
+                            <>
+                                <Navbar />
+                                <Leaderboard />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/mapView"
+                        element={
+                            <>
+                                <Navbar />
+                                <MapView />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/TouristView"
+                        element={
+                            <>
+                                <Navbar />
+                                <TouristView />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/socialgroup"
+                        element={
+                            <>
+                                <Navbar />
+                                <SocialGroups />
+                            </>
+                        }
+                    />
+                    <Route
+                        path="/adminDashboard"
+                        element={
+                            <>
+                                <AdminDashboard />
+                            </>
+                        }
+                    />
+                </Routes>
+            </div>
+        </Router>
+    );
 }
 
 export default App;

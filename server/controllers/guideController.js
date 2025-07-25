@@ -212,4 +212,26 @@ const deleteGalleryImage = (req, res) => {
     });
 };
 
-module.exports = { getGuide, updateGuide, addPost, getPosts, addGalleryImage, getGalleryImages, deletePost, deleteGalleryImage };
+const getAllGuides = (req, res) => {
+    db.query(
+        'SELECT id, name, profile_image, bio, rating, categories, facebook_url, instagram_url, tiktok_url FROM Guides',
+        (err, results) => {
+            if (err) {
+                console.error('Database error:', err.message);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            const parsedGuides = results.map(guide => ({
+                ...guide,
+                categories: guide.categories ? JSON.parse(guide.categories) : [],
+                social: {
+                    facebook: guide.facebook_url,
+                    instagram: guide.instagram_url,
+                    tiktok: guide.tiktok_url
+                }
+            }));
+            res.status(200).json(parsedGuides);
+        }
+    );
+};
+
+module.exports = { getGuide, updateGuide, addPost, getPosts, addGalleryImage, getGalleryImages, deletePost, deleteGalleryImage, getAllGuides };

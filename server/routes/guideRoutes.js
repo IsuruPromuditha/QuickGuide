@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getGuide, updateGuide, addPost, getPosts, addGalleryImage, getGalleryImages, deletePost, deleteGalleryImage } = require('../controllers/guideController');
+const { getGuide, updateGuide, addPost, getPosts, addGalleryImage, getGalleryImages, deletePost, deleteGalleryImage, getAllGuides } = require('../controllers/guideController');
 const { authenticateToken, authorizeGuide } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -32,5 +32,6 @@ router.post('/guide/:id/gallery', authenticateToken, authorizeGuide, upload.sing
 router.get('/guide/:id/gallery', authenticateToken, authorizeGuide, getGalleryImages);
 router.delete('/guide/post/:postId', authenticateToken, authorizeGuide, deletePost);
 router.delete('/guide/gallery/:imageId', authenticateToken, authorizeGuide, deleteGalleryImage);
+router.get('/guides', getAllGuides);
 
 module.exports = router;

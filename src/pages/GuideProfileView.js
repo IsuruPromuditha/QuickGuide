@@ -38,15 +38,13 @@ const GuideProfileView = () => {
         }
         const decoded = jwtDecode(token);
         if (decoded.id && decoded.role === 'guide') {
-          // Fetch guide profile
           const guideResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const guideData = guideResponse.data;
-          console.log('Guide data:', guideData);
           setProfile({
             ...guideData,
-            categories: guideData.categories || [], // Categories are already parsed in backend
+            categories: guideData.categories || [],
             facebook_url: guideData.facebook_url || '',
             instagram_url: guideData.instagram_url || '',
             tiktok_url: guideData.tiktok_url || '',
@@ -61,18 +59,14 @@ const GuideProfileView = () => {
             profileImage: guideData.profile_image || '/api/placeholder/400/400'
           });
 
-          // Fetch posts
           const postsResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          console.log('Posts data:', postsResponse.data);
           setPosts(postsResponse.data);
 
-          // Fetch gallery
           const galleryResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/gallery`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          console.log('Gallery data:', galleryResponse.data);
           setGallery(galleryResponse.data);
         } else {
           throw new Error('Invalid token or role');
@@ -106,7 +100,7 @@ const GuideProfileView = () => {
       formData.append('country', editForm.country);
       formData.append('language', editForm.language);
       formData.append('experience', editForm.experience);
-      formData.append('categories', JSON.stringify(editForm.categories)); // Stringify categories
+      formData.append('categories', JSON.stringify(editForm.categories));
       if (editForm.profileImage instanceof File) {
         formData.append('profileImage', editForm.profileImage);
       }
@@ -114,7 +108,6 @@ const GuideProfileView = () => {
       const response = await axios.put(`http://localhost:5000/api/guide/guide/${decoded.id}`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      console.log('Update response:', response.data);
 
       setProfile({
         ...editForm,
@@ -163,7 +156,6 @@ const GuideProfileView = () => {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
 
-        // Fetch updated posts to ensure correct image paths
         const postsResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -184,6 +176,13 @@ const GuideProfileView = () => {
   const handleDeletePost = async (postId) => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No token found');
+      }
+      const decoded = jwtDecode(token);
+      if (!decoded.id || decoded.role !== 'guide') {
+        throw new Error('Invalid token or role');
+      }
       await axios.delete(`http://localhost:5000/api/guide/post/${postId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -254,6 +253,10 @@ const GuideProfileView = () => {
 
   const handleDeleteGalleryImage = async (imageId) => {
     try {
+      if (!Number.isInteger(Number(imageId))) {
+        toast.error('Invalid image ID');
+        return;
+      }
       const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:5000/api/guide/gallery/${imageId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -270,7 +273,6 @@ const GuideProfileView = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
-          {/* Profile Header */}
           <div className="bg-white shadow-lg rounded-xl p-6 mb-6">
             <div className="flex justify-between items-start mb-6">
               <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
@@ -480,7 +482,6 @@ const GuideProfileView = () => {
             </div>
           </div>
 
-          {/* Recent Posts */}
           <div className="bg-white shadow-lg rounded-xl p-6 mb-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">Recent Posts</h2>
@@ -625,7 +626,6 @@ const GuideProfileView = () => {
             </div>
           </div>
 
-          {/* Tour Gallery */}
           <div className="bg-white shadow-lg rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">Tour Gallery</h2>

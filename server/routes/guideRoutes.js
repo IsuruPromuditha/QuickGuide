@@ -32,7 +32,7 @@ router.get('/guide/:id/posts', authenticateToken, authorizeGuide, getPosts);
 router.post('/guide/:id/gallery', authenticateToken, authorizeGuide, upload.single('image'), addGalleryImage);
 router.get('/guide/:id/gallery', authenticateToken, authorizeGuide, getGalleryImages);
 router.delete('/post/:postId', authenticateToken, authorizeGuide, deletePost);
-router.delete('/guide/gallery/:imageId', authenticateToken, authorizeGuide, deleteGalleryImage);
+router.delete('/gallery/:imageId', authenticateToken, authorizeGuide, deleteGalleryImage);
 router.get('/guides', getAllGuides);
 router.get('/profile/:id', getGuideProfile);
 router.get('/profile/:id/posts', getGuidePosts);

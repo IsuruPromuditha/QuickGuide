@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children, role }) => {
     if (!token) {
         return <Navigate to="/login" />;
     }
-    // Note: For full role-based protection, you would need to decode the token to verify the role
+
     return children;
 };
 
@@ -78,7 +78,7 @@ function App() {
                         }
                     />
                     <Route
-                        path="/tourist-guideprofileview"
+                        path="/tourist-guideprofileview/:id"
                         element={
                             <>
                                 <Navbar />

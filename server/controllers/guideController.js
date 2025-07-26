@@ -2,57 +2,71 @@ const db = require('../config/db');
 const fs = require('fs').promises;
 const path = require('path');
 
-const getGuide = (req, res) => {
+const getGuide = async (req, res) => {
     const guideId = req.params.id;
-
-    db.query(
-        'SELECT id, name, email, national_id, contact, birthday, country, language, experience, profile_image, bio, rating, reviews, facebook_url, instagram_url, tiktok_url, created_at FROM Guides WHERE id = ?',
-        [guideId],
-        (err, results) => {
+    try {
+        const query = `
+      SELECT id, name, email, national_id, contact, birthday, country, language, experience, 
+             profile_image, bio, rating, reviews, facebook_url, instagram_url, tiktok_url, 
+             categories, created_at 
+      FROM guides 
+      WHERE id = ?`;
+        db.query(query, [guideId], (err, results) => {
             if (err) {
-                console.error('Database error:', err.message);
-                return res.status(500).json({ error: 'Database error: ' + err.message });
+                console.error('Error fetching guide:', err);
+                return res.status(500).json({ error: 'Failed to fetch guide data' });
             }
             if (results.length === 0) {
                 return res.status(404).json({ error: 'Guide not found' });
             }
-            res.status(200).json(results[0]);
-        }
-    );
+            const guide = results[0];
+            // Parse categories if it's a JSON string
+            guide.categories = guide.categories ? JSON.parse(guide.categories) : [];
+            res.status(200).json(guide);
+        });
+    } catch (error) {
+        console.error('Error fetching guide:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
 };
 
-const updateGuide = (req, res) => {
+const updateGuide = async (req, res) => {
     const guideId = req.params.id;
-    const { name, bio, facebook_url, instagram_url, tiktok_url, country, language, experience, categories } = req.body;
+    const { name, bio, country, language, experience, facebook_url, instagram_url, tiktok_url, categories } = req.body;
     const profileImage = req.file ? `/profiles/${req.file.filename}` : null;
 
-    const updates = {};
-    if (name) updates.name = name;
-    if (bio) updates.bio = bio;
-    if (facebook_url) updates.facebook_url = facebook_url;
-    if (instagram_url) updates.instagram_url = instagram_url;
-    if (tiktok_url) updates.tiktok_url = tiktok_url;
-    if (country) updates.country = country;
-    if (language) updates.language = language;
-    if (experience) updates.experience = experience;
-    if (profileImage) updates.profile_image = profileImage;
-    if (categories) updates.categories = JSON.stringify(categories);
+    try {
+        const updates = {};
+        if (name) updates.name = name;
+        if (bio) updates.bio = bio;
+        if (country) updates.country = country;
+        if (language) updates.language = language;
+        if (experience) updates.experience = experience;
+        if (facebook_url) updates.facebook_url = facebook_url;
+        if (instagram_url) updates.instagram_url = instagram_url;
+        if (tiktok_url) updates.tiktok_url = tiktok_url;
+        if (categories) updates.categories = JSON.stringify(categories);  
+        if (profileImage) updates.profile_image = profileImage;
 
-    if (Object.keys(updates).length === 0) {
-        return res.status(400).json({ error: 'No fields to update' });
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ error: 'No valid fields provided for update' });
+        }
+
+        const query = 'UPDATE guides SET ? WHERE id = ?';
+        db.query(query, [updates, guideId], (err, result) => {
+            if (err) {
+                console.error('Error updating guide:', err);
+                return res.status(500).json({ error: 'Failed to update guide' });
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ error: 'Guide not found' });
+            }
+            res.status(200).json({ message: 'Guide updated successfully' });
+        });
+    } catch (error) {
+        console.error('Error updating guide:', error);
+        res.status(500).json({ error: 'Server error' });
     }
-
-    const query = 'UPDATE Guides SET ? WHERE id = ?';
-    db.query(query, [updates, guideId], (err, result) => {
-        if (err) {
-            console.error('Database error:', err.message);
-            return res.status(500).json({ error: 'Database error: ' + err.message });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Guide not found' });
-        }
-        res.status(200).json({ message: 'Profile updated successfully' });
-    });
 };
 
 const addPost = async (req, res) => {
@@ -234,4 +248,126 @@ const getAllGuides = (req, res) => {
     );
 };
 
-module.exports = { getGuide, updateGuide, addPost, getPosts, addGalleryImage, getGalleryImages, deletePost, deleteGalleryImage, getAllGuides };
+const getGuideProfile = (req, res) => {
+    const guideId = req.params.id;
+
+    db.query(
+        `SELECT id, name, profile_image, bio, rating, reviews, facebook_url, instagram_url, tiktok_url, categories
+         FROM Guides WHERE id = ?`,
+        [guideId],
+        (err, guideResults) => {
+            if (err) {
+                console.error('Database error:', err.message);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+            if (guideResults.length === 0) {
+                return res.status(404).json({ error: 'Guide not found' });
+            }
+
+            const guide = guideResults[0];
+            guide.categories = guide.categories ? JSON.parse(guide.categories) : [];
+            guide.social = {
+                facebook: guide.facebook_url,
+                instagram: guide.instagram_url,
+                tiktok: guide.tiktok_url
+            };
+
+            db.query(
+                'SELECT image FROM Gallery WHERE guide_id = ? ORDER BY created_at DESC',
+                [guideId],
+                (err, galleryResults) => {
+                    if (err) {
+                        console.error('Database error:', err.message);
+                        return res.status(500).json({ error: 'Database error: ' + err.message });
+                    }
+
+                    guide.gallery = galleryResults.map(item => item.image);
+                    res.status(200).json(guide);
+                }
+            );
+        }
+    );
+};
+
+const getGuidePosts = (req, res) => {
+    const guideId = req.params.id;
+
+    const postsQuery = `
+        SELECT p.id, p.guide_id, p.title, p.caption, p.location, p.created_at, GROUP_CONCAT(pi.image) as images
+        FROM Posts p
+        LEFT JOIN PostImages pi ON p.id = pi.post_id
+        WHERE p.guide_id = ?
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+    `;
+
+    db.query(postsQuery, [guideId], (err, results) => {
+        if (err) {
+            console.error('Database error:', err.message);
+            return res.status(500).json({ error: 'Database error: ' + err.message });
+        }
+
+        const parsedPosts = results.map(post => ({
+            ...post,
+            images: post.images ? post.images.split(',') : []
+        }));
+
+        res.status(200).json(parsedPosts);
+    });
+};
+
+const updatePost = async (req, res) => {
+    const postId = req.params.postId;
+    const guideId = req.user.id;
+    const { title, caption, location } = req.body;
+    const newImages = req.files ? req.files.map(file => `/posts/${file.filename}`) : [];
+
+    try {
+        // Check if post exists
+        const [post] = await new Promise((resolve, reject) => {
+            db.query('SELECT * FROM posts WHERE id = ? AND guide_id = ?', [postId, guideId], (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
+            });
+        });
+
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found or you are not authorized to update it' });
+        }
+
+        // Update post details
+        const updates = {};
+        if (title) updates.title = title;
+        if (caption) updates.caption = caption;
+        if (location) updates.location = location;
+
+        if (Object.keys(updates).length > 0) {
+            const updateQuery = 'UPDATE posts SET ? WHERE id = ? AND guide_id = ?';
+            await new Promise((resolve, reject) => {
+                db.query(updateQuery, [updates, postId, guideId], (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                });
+            });
+        }
+
+        // Add new images if provided
+        if (newImages.length > 0) {
+            const imageQuery = 'INSERT INTO postimages (post_id, image) VALUES ?';
+            const imageValues = newImages.map(image => [postId, image]);
+            await new Promise((resolve, reject) => {
+                db.query(imageQuery, [imageValues], (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                });
+            });
+        }
+
+        res.status(200).json({ message: 'Post updated successfully' });
+    } catch (err) {
+        console.error('Database error:', err.message);
+        res.status(500).json({ error: 'Database error: ' + err.message });
+    }
+};
+
+module.exports = { getGuide, updateGuide, addPost, getPosts, addGalleryImage, getGalleryImages, deletePost, deleteGalleryImage, getAllGuides, getGuideProfile, getGuidePosts, updatePost };

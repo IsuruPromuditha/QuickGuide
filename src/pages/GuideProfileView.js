@@ -33,43 +33,49 @@ const GuideProfileView = () => {
     const fetchGuideData = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (token) {
-          const decoded = jwtDecode(token);
-          if (decoded.id && decoded.role === 'guide') {
-            const guideResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const guideData = guideResponse.data;
-            console.log('Guide data:', guideData);
-            setProfile({
-              ...guideData,
-              categories: guideData.categories ? JSON.parse(guideData.categories) : [],
-              facebook_url: guideData.facebook_url || '',
-              instagram_url: guideData.instagram_url || '',
-              tiktok_url: guideData.tiktok_url || '',
-              profileImage: guideData.profile_image || '/api/placeholder/400/400'
-            });
-            setEditForm({
-              ...guideData,
-              categories: guideData.categories ? JSON.parse(guideData.categories) : [],
-              facebook_url: guideData.facebook_url || '',
-              instagram_url: guideData.instagram_url || '',
-              tiktok_url: guideData.tiktok_url || '',
-              profileImage: guideData.profile_image || '/api/placeholder/400/400'
-            });
+        if (!token) {
+          throw new Error('No token found');
+        }
+        const decoded = jwtDecode(token);
+        if (decoded.id && decoded.role === 'guide') {
+          // Fetch guide profile
+          const guideResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const guideData = guideResponse.data;
+          console.log('Guide data:', guideData);
+          setProfile({
+            ...guideData,
+            categories: guideData.categories || [], // Categories are already parsed in backend
+            facebook_url: guideData.facebook_url || '',
+            instagram_url: guideData.instagram_url || '',
+            tiktok_url: guideData.tiktok_url || '',
+            profileImage: guideData.profile_image || '/api/placeholder/400/400'
+          });
+          setEditForm({
+            ...guideData,
+            categories: guideData.categories || [],
+            facebook_url: guideData.facebook_url || '',
+            instagram_url: guideData.instagram_url || '',
+            tiktok_url: guideData.tiktok_url || '',
+            profileImage: guideData.profile_image || '/api/placeholder/400/400'
+          });
 
-            const postsResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            console.log('Posts data:', postsResponse.data);
-            setPosts(postsResponse.data);
+          // Fetch posts
+          const postsResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('Posts data:', postsResponse.data);
+          setPosts(postsResponse.data);
 
-            const galleryResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/gallery`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            console.log('Gallery data:', galleryResponse.data);
-            setGallery(galleryResponse.data);
-          }
+          // Fetch gallery
+          const galleryResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/gallery`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('Gallery data:', galleryResponse.data);
+          setGallery(galleryResponse.data);
+        } else {
+          throw new Error('Invalid token or role');
         }
       } catch (error) {
         console.error('Error fetching guide data:', error);
@@ -100,7 +106,7 @@ const GuideProfileView = () => {
       formData.append('country', editForm.country);
       formData.append('language', editForm.language);
       formData.append('experience', editForm.experience);
-      formData.append('categories', JSON.stringify(editForm.categories));
+      formData.append('categories', JSON.stringify(editForm.categories)); // Stringify categories
       if (editForm.profileImage instanceof File) {
         formData.append('profileImage', editForm.profileImage);
       }
@@ -149,29 +155,20 @@ const GuideProfileView = () => {
         formData.append('title', newPost.title);
         formData.append('caption', newPost.caption);
         formData.append('location', newPost.location);
-        newPost.images.forEach((image, index) => {
+        newPost.images.forEach((image) => {
           formData.append('images', image);
         });
-        console.log('Post FormData:', Array.from(formData.entries()));
 
         const response = await axios.post(`http://localhost:5000/api/guide/guide/${decoded.id}/post`, formData, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
 
-        // Fetch the new post's images
-        const postResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
+        // Fetch updated posts to ensure correct image paths
+        const postsResponse = await axios.get(`http://localhost:5000/api/guide/guide/${decoded.id}/posts`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const newPostData = postResponse.data.find(post => post.id === response.data.postId);
+        setPosts(postsResponse.data);
 
-        setPosts([newPostData || {
-          id: response.data.postId,
-          title: newPost.title,
-          images: newPost.images.map(image => `/posts/${image.name}`),
-          caption: newPost.caption,
-          location: newPost.location,
-          created_at: new Date().toISOString()
-        }, ...posts]);
         setNewPost({ title: '', images: [], caption: '', location: '' });
         setShowAddPost(false);
         toast.success('Post added successfully');
@@ -187,10 +184,9 @@ const GuideProfileView = () => {
   const handleDeletePost = async (postId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`http://localhost:5000/api/guide/post/${postId}`, {
+      await axios.delete(`http://localhost:5000/api/guide/post/${postId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('Delete post response:', response.data);
       setPosts(posts.filter(post => post.id !== postId));
       toast.success('Post deleted successfully');
     } catch (error) {
@@ -202,7 +198,6 @@ const GuideProfileView = () => {
   const handleProfileImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      console.log('Selected profile image:', file);
       setEditForm({ ...editForm, profileImage: file });
     }
   };
@@ -210,7 +205,6 @@ const GuideProfileView = () => {
   const handlePostImageUpload = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0) {
-      console.log('Selected post images:', files);
       setNewPost({ ...newPost, images: files });
     }
   };
@@ -225,7 +219,6 @@ const GuideProfileView = () => {
   const handleGalleryImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      console.log('Selected gallery image:', file);
       setNewGalleryImage(file);
     }
   };
@@ -237,7 +230,6 @@ const GuideProfileView = () => {
         const decoded = jwtDecode(token);
         const formData = new FormData();
         formData.append('image', newGalleryImage);
-        console.log('Gallery FormData:', formData.get('image'));
 
         const response = await axios.post(`http://localhost:5000/api/guide/guide/${decoded.id}/gallery`, formData, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
@@ -315,9 +307,10 @@ const GuideProfileView = () => {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="relative">
                 <img
-                  src={isEditing && editForm.profileImage instanceof File ? URL.createObjectURL(editForm.profileImage) : `http://localhost:5000${profile.profileImage}` || '/api/placeholder/400/400'}
+                  src={isEditing && editForm.profileImage instanceof File ? URL.createObjectURL(editForm.profileImage) : `http://localhost:5000${profile.profileImage}`}
                   alt="Profile"
                   className="w-40 h-40 rounded-full object-cover shadow-md mx-auto md:mx-0"
+                  onError={(e) => { e.target.src = '/api/placeholder/400/400'; }}
                 />
                 {isEditing && (
                   <label className="absolute bottom-0 right-0 bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-full cursor-pointer transition duration-300">
@@ -432,27 +425,36 @@ const GuideProfileView = () => {
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Social Media</h3>
                   {isEditing ? (
                     <div className="space-y-2">
-                      <input
-                        type="url"
-                        value={editForm.facebook_url}
-                        onChange={(e) => setEditForm({ ...editForm, facebook_url: e.target.value })}
-                        placeholder="Facebook URL"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:border-orange-600 outline-none"
-                      />
-                      <input
-                        type="url"
-                        value={editForm.instagram_url}
-                        onChange={(e) => setEditForm({ ...editForm, instagram_url: e.target.value })}
-                        placeholder="Instagram URL"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:border-orange-600 outline-none"
-                      />
-                      <input
-                        type="url"
-                        value={editForm.tiktok_url}
-                        onChange={(e) => setEditForm({ ...editForm, tiktok_url: e.target.value })}
-                        placeholder="TikTok URL"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:border-orange-600 outline-none"
-                      />
+                      <div className="flex items-center gap-2">
+                        <FaFacebook className="text-blue-600" />
+                        <input
+                          type="url"
+                          value={editForm.facebook_url}
+                          onChange={(e) => setEditForm({ ...editForm, facebook_url: e.target.value })}
+                          placeholder="Facebook URL"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:border-orange-600 outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaInstagram className="text-pink-500" />
+                        <input
+                          type="url"
+                          value={editForm.instagram_url}
+                          onChange={(e) => setEditForm({ ...editForm, instagram_url: e.target.value })}
+                          placeholder="Instagram URL"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:border-orange-600 outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaTiktok className="text-black" />
+                        <input
+                          type="url"
+                          value={editForm.tiktok_url}
+                          onChange={(e) => setEditForm({ ...editForm, tiktok_url: e.target.value })}
+                          placeholder="TikTok URL"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:border-orange-600 outline-none"
+                        />
+                      </div>
                     </div>
                   ) : (
                     <div className="flex gap-4 text-2xl text-gray-600">
@@ -478,6 +480,7 @@ const GuideProfileView = () => {
             </div>
           </div>
 
+          {/* Recent Posts */}
           <div className="bg-white shadow-lg rounded-xl p-6 mb-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">Recent Posts</h2>
@@ -622,6 +625,7 @@ const GuideProfileView = () => {
             </div>
           </div>
 
+          {/* Tour Gallery */}
           <div className="bg-white shadow-lg rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-800">Tour Gallery</h2>
@@ -696,14 +700,12 @@ const GuideProfileView = () => {
                       e.target.src = '/api/placeholder/400/400';
                     }}
                   />
-                  {isEditing && (
-                    <button
-                      onClick={() => handleDeleteGalleryImage(img.id)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300"
-                    >
-                      <FaTrash size={10} />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDeleteGalleryImage(img.id)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition duration-300"
+                  >
+                    <FaTrash size={10} />
+                  </button>
                 </div>
               ))}
             </div>

@@ -5,6 +5,7 @@ import axios from 'axios';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import GuideBooking from '../components/GuideBooking';
 
 const TouristGuideProfileView = () => {
   const { id } = useParams();
@@ -16,6 +17,7 @@ const TouristGuideProfileView = () => {
   const [expandedCaptions, setExpandedCaptions] = useState({});
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showAllGallery, setShowAllGallery] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   useEffect(() => {
     const fetchGuideData = async () => {
@@ -37,13 +39,14 @@ const TouristGuideProfileView = () => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && selectedPost) {
-        closeModal();
+      if (e.key === 'Escape') {
+        if (selectedPost) closeModal();
+        if (showBookingModal) setShowBookingModal(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPost]);
+  }, [selectedPost, showBookingModal]);
 
   const carouselSettings = {
     dots: true,
@@ -196,7 +199,6 @@ const TouristGuideProfileView = () => {
           )}
         </div>
 
-        {/* Posts Section */}
         <div className="mt-12">
           <h2 className="text-3xl font-semibold text-gray-800 mb-6">Posts</h2>
           {posts.length > 0 ? (
@@ -252,11 +254,12 @@ const TouristGuideProfileView = () => {
         </div>
 
         <div className="mt-12 text-center">
-          <Link to="/guidebooking">
-            <button className="bg-primary hover:bg-secondary text-white font-semibold text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300">
-              Contact / Book Now
-            </button>
-          </Link>
+          <button
+            className="bg-primary hover:bg-secondary text-white font-semibold text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300"
+            onClick={() => setShowBookingModal(true)}
+          >
+            Contact / Book Now
+          </button>
         </div>
 
         {selectedPost && (
@@ -319,6 +322,29 @@ const TouristGuideProfileView = () => {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showBookingModal && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300"
+            role="dialog"
+            aria-labelledby="booking-modal-title"
+            aria-modal="true"
+          >
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl transform scale-95 animate-modal-open">
+              <div className="flex justify-between items-center mb-6">
+                <h2 id="booking-modal-title" className="text-2xl font-bold text-gray-800">Book Your Guide</h2>
+                <button
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full p-2 text-2xl focus:outline-none transition-all duration-200"
+                  onClick={() => setShowBookingModal(false)}
+                  aria-label="Close booking modal"
+                >
+                  &times;
+                </button>
+              </div>
+              <GuideBooking guideId={id} onClose={() => setShowBookingModal(false)} />
             </div>
           </div>
         )}

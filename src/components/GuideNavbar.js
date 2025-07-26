@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaCalendarAlt, FaChartBar, FaCog, FaBars, FaTimes } from 'react-icons/fa';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
@@ -7,9 +7,15 @@ import axios from 'axios';
 const GuideNavbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [guideName, setGuideName] = useState('');
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   useEffect(() => {
@@ -40,7 +46,7 @@ const GuideNavbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link to="/guide-dashboard" className="text-white text-xl font-bold">
+            <Link to="/" className="text-white text-xl font-bold">
               QuickGuide
             </Link>
           </div>
@@ -77,7 +83,10 @@ const GuideNavbar = () => {
             <span className="text-white text-sm font-medium">
               {guideName || 'Guide'}
             </span>
-            <button className="bg-orange-700 hover:bg-orange-800 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300">
+            <button 
+              onClick={handleLogout}
+              className="bg-orange-700 hover:bg-orange-800 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+            >
               Logout
             </button>
           </div>
@@ -130,7 +139,13 @@ const GuideNavbar = () => {
               <span className="text-white block px-3 py-2 text-base font-medium">
                 {guideName || 'Guide'}
               </span>
-              <button className="bg-orange-800 hover:bg-orange-900 text-white w-full text-left px-3 py-2 rounded-md text-base font-medium transition duration-300">
+              <button 
+                onClick={() => {
+                  handleLogout();
+                  toggleMenu();
+                }}
+                className="bg-orange-800 hover:bg-orange-900 text-white w-full text-left px-3 py-2 rounded-md text-base font-medium transition duration-300"
+              >
                 Logout
               </button>
             </div>

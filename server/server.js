@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const guideRoutes = require('./routes/guideRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const path = require('path');
 
@@ -21,6 +22,7 @@ app.use('/posts', express.static(path.join(__dirname, 'Uploads/posts')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/guide', guideRoutes);
+app.use('/api/booking', bookingRoutes);
 app.use('/api/contact', contactRoutes);
 
 const PORT = process.env.PORT || 5000;

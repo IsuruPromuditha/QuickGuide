@@ -1,13 +1,18 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { CiSearch } from 'react-icons/ci';
 import { GiSriLanka } from 'react-icons/gi';
 import { CiMenuBurger } from 'react-icons/ci';
 import { SiOpenstreetmap } from 'react-icons/si';
+import { FaUser, FaSignOutAlt } from 'react-icons/fa';
 import ResponsiveMenu from './ResponsiveMenu';
+import { jwtDecode } from 'jwt-decode';
 
 const Navbar = () => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   const NavbarMenu = [
     { id: 1, title: 'Home', link: '/' },
@@ -16,6 +21,34 @@ const Navbar = () => {
     { id: 4, title: 'Guides', link: '/guides' },
     { id: 5, title: 'Social', link: '/socialgroup' },
   ];
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        // Check if token is not expired
+        const currentTime = Date.now() / 1000;
+        if (decoded.exp > currentTime) {
+          setIsLoggedIn(true);
+        } else {
+          localStorage.removeItem('token');
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setIsDropdownOpen(false);
+    navigate('/login');
+  };
 
   return (
     <>
@@ -49,18 +82,43 @@ const Navbar = () => {
                 <SiOpenstreetmap />
               </button>
             </Link>
-            <Link
-              to="/register"
-              className="hover:bg-primary text-primary font-semibold hover:text-white rounded-md border-2 border-primary px-6 py-2 duration-200 hidden md:block"
-            >
-              Sign Up
-            </Link>
-            <Link
-              to="/login"
-              className="hover:bg-primary text-primary font-semibold hover:text-white rounded-md border-2 border-primary px-6 py-2 duration-200 hidden md:block"
-            >
-              Login
-            </Link>
+            {isLoggedIn ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-2 text-primary font-semibold border-2 border-primary px-4 py-2 rounded-md hover:bg-primary hover:text-white duration-200"
+                >
+                  <FaUser />
+                  Profile
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <FaSignOutAlt />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="hover:bg-primary text-primary font-semibold hover:text-white rounded-md border-2 border-primary px-6 py-2 duration-200 hidden md:block"
+                >
+                  Sign Up
+                </Link>
+                <Link
+                  to="/login"
+                  className="hover:bg-primary text-primary font-semibold hover:text-white rounded-md border-2 border-primary px-6 py-2 duration-200 hidden md:block"
+                >
+                  Login
+                </Link>
+              </>
+            )}
           </div>
           <div className="md:hidden" onClick={() => setOpen(!open)}>
             <CiMenuBurger className="text-4xl" />

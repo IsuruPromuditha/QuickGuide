@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const LocationInput = ({ label, value, onChange, onRemove, canRemove }) => (
   <div className="flex items-center gap-2 mb-4">
@@ -69,10 +71,13 @@ const GuideCategorySelect = ({ selected, onChange }) => {
   );
 };
 
-export default function GuideBooking() {
-  const [locations, setLocations] = useState(['', '']); // starting + one destination
+export default function GuideBooking({ guideId, onClose }) {
+  const [locations, setLocations] = useState(['', '']);
   const [vehicle, setVehicle] = useState('');
   const [category, setCategory] = useState('');
+  const [passengerCount, setPassengerCount] = useState(1);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLocationChange = (index, e) => {
     const newLocs = [...locations];
@@ -88,11 +93,63 @@ export default function GuideBooking() {
     setLocations(locations.filter((_, i) => i !== index));
   };
 
-  return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded shadow mt-10">
-      <h2 className="text-2xl font-bold mb-6 text-center">Book Your Guide</h2>
+  const handleSubmit = async () => {
+    const validDestinations = locations.slice(1).filter(loc => loc.trim() !== '');
+    if (!locations[0] || validDestinations.length === 0 || !vehicle || !category || passengerCount < 1) {
+      setError('All fields are required, including at least one valid destination, and passenger count must be at least 1.');
+      return;
+    }
 
-      {/* Locations */}
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('You must be logged in to book a guide.');
+        navigate('/login');
+        return;
+      }
+
+      const bookingData = {
+        guide_id: guideId,
+        start_location: locations[0],
+        destinations: validDestinations,
+        vehicle,
+        category,
+        passenger_count: passengerCount,
+      };
+
+      console.log('Sending booking data:', bookingData); // Debug log
+      const response = await axios.post('http://localhost:5000/api/booking/create', bookingData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      onClose();
+      alert(`Booking submitted successfully! Booking ID: ${response.data.bookingId}`);
+    } catch (err) {
+      console.error('Client error:', err.response?.data || err.message);
+      setError(err.response?.data?.error || 'Failed to submit booking. Please try again.');
+    }
+  };
+
+  return (
+    <div className="p-6">
+      {error && (
+        <p className="text-red-500 text-sm mb-4">{error}</p>
+      )}
+      <div className="mb-6">
+        <label className="block font-semibold mb-2" htmlFor="passenger-count">
+          Number of Passengers
+        </label>
+        <input
+          id="passenger-count"
+          type="number"
+          min="1"
+          value={passengerCount}
+          onChange={(e) => setPassengerCount(parseInt(e.target.value) || 1)}
+          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
       {locations.map((loc, i) => (
         <LocationInput
           key={i}
@@ -103,7 +160,6 @@ export default function GuideBooking() {
           canRemove={i !== 0}
         />
       ))}
-
       <button
         onClick={addDestination}
         className="mb-6 text-blue-600 hover:underline block mx-auto"
@@ -111,20 +167,15 @@ export default function GuideBooking() {
       >
         + Add More Destinations
       </button>
-
-      {/* Vehicle Selection */}
       <VehicleSelector selected={vehicle} onSelect={setVehicle} />
-
-      {/* Guide Category */}
       <GuideCategorySelect
         selected={category}
         onChange={(e) => setCategory(e.target.value)}
       />
-
       <button
-        className="w-full bg-blue-600 text-white py-3 rounded font-semibold hover:bg-blue-700 transition"
+        className="w-full bg-primary text-white py-3 rounded font-semibold hover:bg-secondary transition"
         type="button"
-        onClick={() => alert('Booking submitted (UI only)')}
+        onClick={handleSubmit}
       >
         Book Now
       </button>

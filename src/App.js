@@ -15,11 +15,10 @@ import GuideSignup from './pages/GuideSignup';
 import UserSelection from './pages/UserSelection';
 import TouristGuideProfileView from './pages/TouristGuideProfileView';
 import GuideBooking from './components/GuideBooking';
-import GuideRequestInbox from './components/GuideRequest'; // Verify this component exists
+import GuideRequestInbox from './components/GuideRequest';
 import GuideProfileView from './pages/GuideProfileView';
 import MapView from './pages/mapView';
 import Leaderboard from './pages/Leaderboard';
-import TouristView from './pages/TouristView';
 import SocialGroups from './pages/SocialGroups';
 import AdminDashboard from './pages/AdminDashboard';
 import GuideBookingRequest from './pages/GuideBookingRequest';
@@ -145,15 +144,6 @@ function App() {
               <>
                 <Navbar />
                 <MapView />
-              </>
-            }
-          />
-          <Route
-            path="/TouristView"
-            element={
-              <>
-                <Navbar />
-                <TouristView />
               </>
             }
           />

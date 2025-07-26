@@ -47,7 +47,7 @@ const GuideNavbar = () => {
 
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              to="/guide-profile"
+              to="/guideprofileview"
               className="text-white hover:text-orange-200 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition duration-300"
             >
               <FaUser size={16} />

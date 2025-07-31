@@ -120,6 +120,43 @@ const login = async (req, res) => {
     }
 };
 
+const adminLogin = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    try {
+        db.query('SELECT * FROM Admins WHERE email = ?', [email], async (err, adminResults) => {
+            if (err) {
+                console.error('Database error:', err.message);
+                return res.status(500).json({ error: 'Database error: ' + err.message });
+            }
+
+            if (adminResults.length === 0) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            const admin = adminResults[0];
+            const isMatch = await bcrypt.compare(password, admin.password);
+            if (!isMatch) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+
+            const token = jwt.sign(
+                { id: admin.id, role: 'admin' },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+            return res.status(200).json({ message: 'Admin login successful', token, role: 'admin' });
+        });
+    } catch (error) {
+        console.error('Server error:', error.message);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+};
+
 const getGuide = (req, res) => {
     const guideId = req.params.id;
     
@@ -139,4 +176,4 @@ const getGuide = (req, res) => {
     );
 };
 
-module.exports = { registerGuide, registerTourist, login, getGuide };
+module.exports = { registerGuide, registerTourist, login, getGuide, adminLogin };

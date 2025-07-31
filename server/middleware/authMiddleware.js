@@ -32,4 +32,11 @@ const authorizeTourist = (req, res, next) => {
     next();
 };
 
-module.exports = { authenticateToken, authorizeGuide, authorizeTourist };
+const authorizeAdmin = (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied. Admin role required.' });
+    }
+    next();
+};
+
+module.exports = { authenticateToken, authorizeGuide, authorizeTourist, authorizeAdmin };

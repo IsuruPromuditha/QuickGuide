@@ -4,6 +4,7 @@ const authRoutes = require('./routes/authRoutes');
 const guideRoutes = require('./routes/guideRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const guideLocationRoutes = require('./routes/guideLocationRoutes');
 const path = require('path');
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/guide', guideRoutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/guide', guideLocationRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

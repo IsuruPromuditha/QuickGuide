@@ -22,6 +22,8 @@ import Leaderboard from './pages/Leaderboard';
 import SocialGroups from './pages/SocialGroups';
 import AdminDashboard from './pages/AdminDashboard';
 import GuideBookingRequest from './pages/GuideBookingRequest';
+import GuideSettings from './pages/GuideSettings';
+import AdminLogin from './pages/AdminLogin';
 
 const ProtectedRoute = ({ children, role }) => {
   const token = localStorage.getItem('token');
@@ -48,9 +50,19 @@ function App() {
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick pauseOnHover />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<UserSelection />} />
           <Route path="/tourist-registeration" element={<TouristSignup />} />
           <Route path="/guide-registeration" element={<GuideSignup />} />
+          <Route
+            path="/guide-settings"
+            element={
+              <ProtectedRoute role="guide">
+                <GuideNavbar />
+                <GuideSettings />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/guide-bookings"
             element={

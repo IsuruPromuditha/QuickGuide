@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaCalendarAlt, FaChartBar, FaCog, FaBars, FaTimes } from 'react-icons/fa';
+import { FaUser, FaCalendarAlt, FaChartBar, FaCog, FaBars, FaTimes, FaUsers } from 'react-icons/fa';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 
@@ -74,6 +74,13 @@ const GuideNavbar = () => {
               Analytics
             </Link>
             <Link
+              to="/guide-social-groups"
+              className="text-white hover:text-orange-200 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition duration-300"
+            >
+              <FaUsers size={16} />
+              Social Media Groups
+            </Link>
+            <Link
               to="/guide-settings"
               className="text-white hover:text-orange-200 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition duration-300"
             >
@@ -91,9 +98,8 @@ const GuideNavbar = () => {
             </button>
           </div>
 
-          <div className="md:hidden">
+          <div className="md:hidden" onClick={toggleMenu}>
             <button
-              onClick={toggleMenu}
               className="text-white hover:text-orange-200 focus:outline-none focus:text-orange-200"
             >
               {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
@@ -105,7 +111,7 @@ const GuideNavbar = () => {
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-orange-700">
               <Link
-                to="/guide-profile"
+                to="/guideprofileview"
                 className="text-white hover:text-orange-200 block px-3 py-2 rounded-md text-base font-medium flex items-center gap-2"
                 onClick={toggleMenu}
               >
@@ -127,6 +133,14 @@ const GuideNavbar = () => {
               >
                 <FaChartBar size={16} />
                 Analytics
+              </Link>
+              <Link
+                to="/guide-social-groups"
+                className="text-white hover:text-orange-200 block px-3 py-2 rounded-md text-base font-medium flex items-center gap-2"
+                onClick={toggleMenu}
+              >
+                <FaUsers size={16} />
+                Social Media Groups
               </Link>
               <Link
                 to="/guide-settings"

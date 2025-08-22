@@ -4,7 +4,7 @@ import { CiSearch } from 'react-icons/ci';
 import { GiSriLanka } from 'react-icons/gi';
 import { CiMenuBurger } from 'react-icons/ci';
 import { SiOpenstreetmap } from 'react-icons/si';
-import { FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaRoute } from 'react-icons/fa';
 import ResponsiveMenu from './ResponsiveMenu';
 import { jwtDecode } from 'jwt-decode';
 
@@ -12,6 +12,7 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
 
   const NavbarMenu = [
@@ -27,18 +28,20 @@ const Navbar = () => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        // Check if token is not expired
         const currentTime = Date.now() / 1000;
         if (decoded.exp > currentTime) {
           setIsLoggedIn(true);
+          setUserRole(decoded.role);
         } else {
           localStorage.removeItem('token');
           setIsLoggedIn(false);
+          setUserRole(null);
         }
       } catch (error) {
         console.error('Error decoding token:', error);
         localStorage.removeItem('token');
         setIsLoggedIn(false);
+        setUserRole(null);
       }
     }
   }, []);
@@ -46,6 +49,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
+    setUserRole(null);
     setIsDropdownOpen(false);
     navigate('/login');
   };
@@ -53,7 +57,7 @@ const Navbar = () => {
   return (
     <>
       <nav>
-        <div className="container flex justify-between items-center py-8">
+        <div className="container mx-auto flex justify-between items-center py-8 px-4">
           <div className="text-2xl flex items-center gap-2 font-bold">
             <GiSriLanka className="text-primary" />
             <p>Quick</p>
@@ -92,10 +96,20 @@ const Navbar = () => {
                   Profile
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-travel-shadow py-1 z-10">
+                    {userRole === 'tourist' && (
+                      <Link
+                        to="/tourist-trips"
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-accent hover:text-primary"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FaRoute />
+                        My Trips
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-accent hover:text-primary"
                     >
                       <FaSignOutAlt />
                       Logout

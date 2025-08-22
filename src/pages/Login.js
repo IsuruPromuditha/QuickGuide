@@ -28,7 +28,7 @@ const Login = () => {
         if (data.role === 'guide') {
           navigate('/guideprofileview');
         } else {
-          navigate('/tourist-dashboard');
+          navigate('/guides');
         }
       } else {
         setError(data.error || 'Failed to login');

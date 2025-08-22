@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { jwtDecode } from 'jwt-decode';
 import Navbar from './components/Navbar';
 import GuideNavbar from './components/GuideNavbar';
+import AdminHeader from './components/AdminHeader';
 import Login from './pages/Login';
 import About from './pages/About';
 import Contact from './pages/Contact';
@@ -21,25 +22,31 @@ import MapView from './pages/mapView';
 import Leaderboard from './pages/Leaderboard';
 import SocialGroups from './pages/SocialGroups';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminActiveGuides from './pages/AdminActiveGuides';
+import AdminManageGuides from './pages/AdminManageGuides';
+import AdminManageTrips from './pages/AdminManageTrips';
 import GuideBookingRequest from './pages/GuideBookingRequest';
 import GuideSettings from './pages/GuideSettings';
 import AdminLogin from './pages/AdminLogin';
+import TouristTrips from './pages/TouristTrips';
+import TouristTripDetails from './pages/TouristTripDetails';
+import GuideSocialMediaGroups from './pages/GuideSocialMediaGroups';
 
 const ProtectedRoute = ({ children, role }) => {
   const token = localStorage.getItem('token');
   if (!token) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/admin-login" />;
   }
 
   try {
     const decoded = jwtDecode(token);
     if (role && decoded.role !== role) {
-      return <Navigate to="/login" />;
+      return <Navigate to="/admin-login" />;
     }
     return children;
   } catch (err) {
     console.error('Invalid token:', err);
-    return <Navigate to="/login" />;
+    return <Navigate to="/admin-login" />;
   }
 };
 
@@ -129,16 +136,25 @@ function App() {
           <Route
             path="/guidebooking"
             element={
-              <GuideBooking /> // Note: This route might need protection or context
+              <GuideBooking />
             }
           />
           <Route
-            path="/guiderequest" // Fixed typo from /guiderequst
+            path="/guiderequest"
             element={
               <>
                 <Navbar />
                 <GuideRequestInbox />
               </>
+            }
+          />
+          <Route
+            path="/guide-social-groups"
+            element={
+              <ProtectedRoute role="guide">
+                <GuideNavbar />
+                <GuideSocialMediaGroups />
+              </ProtectedRoute>
             }
           />
           <Route
@@ -172,7 +188,53 @@ function App() {
             path="/adminDashboard"
             element={
               <ProtectedRoute role="admin">
+                <AdminHeader />
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/adminDashboard/active-guides"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminHeader />
+                <AdminActiveGuides />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/adminDashboard/manage-guides"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminHeader />
+                <AdminManageGuides />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/adminDashboard/manage-trips"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminHeader />
+                <AdminManageTrips />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tourist-trips"
+            element={
+              <ProtectedRoute role="tourist">
+                <Navbar />
+                <TouristTrips />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tourist-trip-details/:id"
+            element={
+              <ProtectedRoute role="tourist">
+                <Navbar />
+                <TouristTripDetails />
               </ProtectedRoute>
             }
           />

@@ -19,8 +19,8 @@ const Navbar = () => {
     { id: 1, title: 'Home', link: '/' },
     { id: 2, title: 'About', link: '/about' },
     { id: 3, title: 'Contact', link: '/contact' },
-    { id: 4, title: 'Guides', link: '/guides' },
-    { id: 5, title: 'Social', link: '/socialgroup' },
+    { id: 4, title: 'Find a Guide', link: '/guides' },
+    { id: 5, title: 'Social', link: '/tourist-socialgroup' },
   ];
 
   useEffect(() => {

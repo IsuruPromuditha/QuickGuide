@@ -8,7 +8,8 @@ const {
   createSocialGroup,
   getSocialGroups,
   updateSocialGroup,
-  deleteSocialGroup
+  deleteSocialGroup,
+  getApprovedSocialGroups
 } = require('../controllers/socialMediaController');
 
 const { authenticateToken, authorizeGuide } = require('../middleware/authMiddleware');
@@ -39,5 +40,7 @@ router.post('/social-groups', authenticateToken, authorizeGuide, upload.single('
 router.get('/social-groups', authenticateToken, authorizeGuide, getSocialGroups);
 router.put('/social-groups/:id', authenticateToken, authorizeGuide, upload.single('image'), updateSocialGroup);
 router.delete('/social-groups/:id', authenticateToken, authorizeGuide, deleteSocialGroup);
+
+router.get('/approved-social-groups', getApprovedSocialGroups);
 
 module.exports = router;

@@ -7,6 +7,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const guideLocationRoutes = require('./routes/guideLocationRoutes');
 const socialMediaRoutes = require('./routes/socialMediaRoutes');
+const adminManageGuidesRoutes = require('./routes/adminManageGuidesRoutes');
 const path = require('path');
 const fs = require('fs');
 
@@ -37,6 +38,7 @@ app.use('/api/booking', bookingRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/guide', guideLocationRoutes);
 app.use('/api/socialmedia', socialMediaRoutes); 
+app.use('/api/adminManageGuides', adminManageGuidesRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

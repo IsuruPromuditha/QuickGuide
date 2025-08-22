@@ -299,9 +299,49 @@ const deleteSocialGroup = async (req, res) => {
   }
 };
 
+const getApprovedSocialGroups = async (req, res) => {
+  try {
+    const groups = await q(
+      'SELECT id, guide_id, title, image_path, status, reason, created_at, updated_at FROM social_groups WHERE status = ? ORDER BY created_at DESC',
+      ['approved']
+    );
+
+    if (!groups.length) return res.json([]);
+
+    const ids = groups.map(g => g.id);
+    const inClause = ids.map(() => '?').join(',');
+    const plats = await q(
+      `SELECT social_group_id, platform_name, platform_link
+         FROM social_group_platforms
+        WHERE social_group_id IN (${inClause})
+        ORDER BY id ASC`,
+      ids
+    );
+
+    const byGroup = new Map();
+    for (const p of plats) {
+      const arr = byGroup.get(p.social_group_id) || [];
+      arr.push({ name: p.platform_name, link: p.platform_link });
+      byGroup.set(p.social_group_id, arr);
+    }
+
+    const formatted = groups.map(g => ({
+      ...g,
+      socialMedias: byGroup.get(g.id) || [],
+      image: g.image_path ? publicImageUrl(req, g.image_path) : null
+    }));
+
+    return res.json(formatted);
+  } catch (error) {
+    console.error('[FETCH_APPROVED_GROUPS_ERROR]', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   createSocialGroup,
   getSocialGroups,
   updateSocialGroup,
-  deleteSocialGroup
+  deleteSocialGroup,
+  getApprovedSocialGroups
 };

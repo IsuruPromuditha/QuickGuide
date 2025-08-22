@@ -15,7 +15,7 @@ const GuideCard = ({ guide }) => {
             />
             <div className="flex flex-col flex-grow">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">{guide.name}</h3>
-                
+
                 <div className="flex flex-wrap justify-center gap-2 mb-4">
                     {guide.categories.map((category, index) => (
                         <span
@@ -28,7 +28,7 @@ const GuideCard = ({ guide }) => {
                 </div>
 
                 <div className="flex-grow"></div>
-                
+
                 <div className="flex justify-center items-center mb-4">
                     {[...Array(5)].map((_, index) => (
                         <FaStar
@@ -38,7 +38,7 @@ const GuideCard = ({ guide }) => {
                     ))}
                     <span className="ml-2 text-gray-600">({rating.toFixed(1)}/5)</span>
                 </div>
-                
+
                 <div className="flex justify-center gap-4">
                     {guide.social.tiktok && (
                         <a href={guide.social.tiktok} target="_blank" rel="noopener noreferrer" className="text-2xl text-gray-500 hover:text-gray-900">
@@ -114,64 +114,65 @@ const Guides = () => {
 
     return (
         <div className="bg-gray-50 min-h-screen">
-            <div className="container mx-auto py-12">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold text-gray-800 mb-4">Meet Our Guides</h1>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                        Discover our verified local tour guides, each offering unique expertise to make your Sri Lankan adventure unforgettable.
-                    </p>
-                </div>
+                <div className="container mx-auto bg-white shadow-2xl rounded-2xl p-6 sm:p-8 transition-all duration-300 py-12">
 
-                <div className="mb-8">
-                    <input
-                        type="text"
-                        placeholder="Search by name or category..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full p-3 mb-6 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    />
+                    {/* Header */}
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl font-bold text-gray-800 mb-4">Meet Our Guides</h1>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                            Discover our verified local tour guides, each offering unique expertise to make your Sri Lankan adventure unforgettable.
+                        </p>
+                    </div>
 
-                    <div className="overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
-                        <div className="inline-flex gap-3">
-                            {categories.map((category) => (
-                                <button
-                                    key={category}
-                                    onClick={() => setSelectedCategory(category)}
-                                    className={`px-4 py-2 rounded-full font-semibold transition-colors duration-200 ${
-                                        selectedCategory === category
-                                            ? 'bg-primary text-white shadow'
-                                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                    }`}
-                                >
-                                    {category}
-                                </button>
-                            ))}
+                    <div className="mb-8">
+                        <input
+                            type="text"
+                            placeholder="Search by name or category..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full p-3 mb-6 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary focus:border-primary transition"
+                        />
+
+                        <div className="overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+                            <div className="inline-flex gap-3">
+                                {categories.map((category) => (
+                                    <button
+                                        key={category}
+                                        onClick={() => setSelectedCategory(category)}
+                                        className={`px-4 py-2 rounded-full font-semibold transition-colors duration-200 ${selectedCategory === category
+                                                ? 'bg-primary text-white shadow'
+                                                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                                            }`}
+                                    >
+                                        {category}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
+
+                    {loading ? (
+                        <div className="text-center py-16">
+                            <p className="text-xl text-gray-500">Loading guides...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-16">
+                            <p className="text-xl text-red-500">{error}</p>
+                        </div>
+                    ) : filteredGuides.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {filteredGuides.map((guide) => (
+                                <GuideCard key={guide.id} guide={guide} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-16">
+                            <p className="text-xl text-gray-500">No guides found for your search.</p>
+                            <p className="text-md text-gray-400 mt-2">Try adjusting your filters or search term.</p>
+                        </div>
+                    )}
                 </div>
 
-                {loading ? (
-                    <div className="text-center py-16">
-                        <p className="text-xl text-gray-500">Loading guides...</p>
-                    </div>
-                ) : error ? (
-                    <div className="text-center py-16">
-                        <p className="text-xl text-red-500">{error}</p>
-                    </div>
-                ) : filteredGuides.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredGuides.map((guide) => (
-                            <GuideCard key={guide.id} guide={guide} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-16">
-                        <p className="text-xl text-gray-500">No guides found for your search.</p>
-                        <p className="text-md text-gray-400 mt-2">Try adjusting your filters or search term.</p>
-                    </div>
-                )}
-            </div>
         </div>
     );
 };

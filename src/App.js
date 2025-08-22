@@ -176,7 +176,7 @@ function App() {
             }
           />
           <Route
-            path="/socialgroup"
+            path="/tourist-socialgroup"
             element={
               <>
                 <Navbar />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { CiSearch } from 'react-icons/ci';
 import { GiSriLanka } from 'react-icons/gi';
 import { CiMenuBurger } from 'react-icons/ci';
@@ -14,13 +14,16 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const NavbarMenu = [
     { id: 1, title: 'Home', link: '/' },
     { id: 2, title: 'About', link: '/about' },
     { id: 3, title: 'Contact', link: '/contact' },
-    { id: 4, title: 'Find a Guide', link: '/guides' },
-    { id: 5, title: 'Social', link: '/tourist-socialgroup' },
+    ...(isLoggedIn ? [
+      { id: 4, title: 'Find a Guide', link: '/guides' },
+      { id: 5, title: 'Social', link: '/tourist-socialgroup' },
+    ] : []),
   ];
 
   useEffect(() => {
@@ -69,7 +72,9 @@ const Navbar = () => {
                 <li key={item.id}>
                   <Link
                     to={item.link}
-                    className="inline-block py-1 px-3 hover:text-primary font-semibold"
+                    className={`inline-block py-1 px-3 hover:text-primary font-semibold ${
+                      location.pathname === item.link ? 'border-b-2 border-primary' : ''
+                    }`}
                   >
                     {item.title}
                   </Link>

@@ -132,13 +132,71 @@ const getBookings = async (req, res) => {
   }
 };
 
+const getTouristBookings = async (req, res) => {
+  const tourist_id = req.user.id;
+
+  try {
+    const query = `
+      SELECT b.id, b.guide_id, b.tourist_id, b.start_location, b.destinations, 
+             b.vehicle, b.category, b.passenger_count, b.status, b.created_at, b.decline_reason,
+             g.name AS guide_name
+      FROM Bookings b
+      JOIN Guides g ON b.guide_id = g.id
+      WHERE b.tourist_id = ?
+    `;
+
+    db.query(query, [tourist_id], (err, results) => {
+      if (err) {
+        console.error('Database error:', err.message);
+        return res.status(500).json({ error: 'Database error: ' + err.message });
+      }
+
+      const processedResults = results.map(booking => {
+        let processedDestinations = [];
+
+        try {
+          if (Array.isArray(booking.destinations)) {
+            if (booking.destinations.every(dest => typeof dest === 'string' && dest.trim())) {
+              processedDestinations = booking.destinations;
+            } else {
+              console.warn(`Invalid destinations array for booking ID ${booking.id}: ${JSON.stringify(booking.destinations)}`);
+            }
+          } else if (typeof booking.destinations === 'string') {
+            const parsed = JSON.parse(booking.destinations);
+            if (Array.isArray(parsed) && parsed.every(dest => typeof dest === 'string' && dest.trim())) {
+              processedDestinations = parsed;
+            } else {
+              console.warn(`Invalid destinations format for booking ID ${booking.id}: ${booking.destinations}`);
+            }
+          } else {
+            console.warn(`Unexpected destinations type for booking ID ${booking.id}: ${typeof booking.destinations}`);
+          }
+        } catch (e) {
+          console.error(`Failed to process destinations for booking ID ${booking.id}: ${JSON.stringify(booking.destinations)}`, e.message);
+          processedDestinations = [];
+        }
+
+        return {
+          ...booking,
+          destinations: processedDestinations
+        };
+      });
+
+      res.status(200).json(processedResults);
+    });
+  } catch (error) {
+    console.error('Server error:', error.message);
+    res.status(500).json({ error: 'Server error: ' + error.message });
+  }
+};
+
 const updateBookingStatus = async (req, res) => {
   const { id } = req.params;
   const { status, decline_reason } = req.body;
   const guide_id = req.user.id;
 
-  if (!status || !['confirmed', 'cancelled'].includes(status)) {
-    return res.status(400).json({ error: 'Valid status is required (confirmed or cancelled)' });
+  if (!status || !['confirmed', 'cancelled', 'completed'].includes(status)) {
+    return res.status(400).json({ error: 'Valid status is required (confirmed, cancelled, or completed)' });
   }
 
   if (status === 'cancelled' && !decline_reason) {
@@ -183,4 +241,4 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
-module.exports = { createBooking, getBookings, updateBookingStatus };
+module.exports = { createBooking, getBookings, updateBookingStatus, getTouristBookings };

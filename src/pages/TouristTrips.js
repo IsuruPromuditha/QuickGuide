@@ -1,4 +1,3 @@
-// TouristTrips.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaRoute, FaMapMarkerAlt } from 'react-icons/fa';
@@ -10,6 +9,24 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const SOCKET_SERVER = 'http://localhost:5000';
 
+const ErrorBoundary = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const errorHandler = (error, errorInfo) => {
+      console.error('Map ErrorBoundary caught:', error, errorInfo);
+      setHasError(true);
+    };
+    window.addEventListener('error', errorHandler);
+    return () => window.removeEventListener('error', errorHandler);
+  }, []);
+
+  if (hasError) {
+    return <div className="text-red-500 text-center p-4">Error rendering map. Please try again.</div>;
+  }
+  return children;
+};
+
 const TouristTrips = () => {
   const [activeTab, setActiveTab] = useState('current');
   const [currentTrip, setCurrentTrip] = useState(null);
@@ -19,19 +36,42 @@ const TouristTrips = () => {
   const [socket, setSocket] = useState(null);
   const mapRef = useRef(null);
   const directionsRenderer = useRef(null);
-
   const navigate = useNavigate();
+  const lastUpdateRef = useRef({});
+
+  const isValidLocation = (loc) => loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng);
+
+  const fetchLocations = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:5000/api/booking/locations/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const { guide, tourist } = response.data;
+      if (isValidLocation({ lat: guide.latitude, lng: guide.longitude }) &&
+          isValidLocation({ lat: tourist.latitude, lng: tourist.longitude })) {
+        console.log(`Fetched locations for booking ${bookingId}:`, response.data);
+        setGuideLocation({ lat: guide.latitude, lng: guide.longitude });
+        setTouristLocation({ lat: tourist.latitude, lng: tourist.longitude });
+      } else {
+        console.warn(`Invalid location data for booking ${bookingId}:`, response.data);
+        setGuideLocation({ lat: 7.8731, lng: 80.7718 });
+        setTouristLocation({ lat: 7.8731, lng: 80.7718 });
+      }
+    } catch (error) {
+      console.error(`Error fetching locations for booking ${bookingId}:`, error.message);
+      toast.error('Failed to fetch locations.', { position: 'top-right', autoClose: 5000 });
+      setGuideLocation({ lat: 7.8731, lng: 80.7718 });
+      setTouristLocation({ lat: 7.8731, lng: 80.7718 });
+    }
+  };
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          console.error('No token found. Please log in.');
-          toast.error('Please log in to view trips.', {
-            position: 'top-right',
-            autoClose: 5000,
-          });
+          toast.error('Please log in to view trips.', { position: 'top-right', autoClose: 5000 });
           return;
         }
 
@@ -40,14 +80,14 @@ const TouristTrips = () => {
         });
 
         const bookings = response.data;
-        const confirmedBooking = bookings.find(
-          (booking) => booking.status === 'confirmed'
-        );
+        const confirmedBooking = bookings.find((booking) => booking.status === 'confirmed');
         setCurrentTrip(confirmedBooking || null);
 
-        const completedBookings = bookings.filter(
-          (booking) => booking.status === 'completed'
-        );
+        if (confirmedBooking) {
+          await fetchLocations(confirmedBooking.id);
+        }
+
+        const completedBookings = bookings.filter((booking) => booking.status === 'completed');
         setTripHistory(completedBookings);
       } catch (error) {
         console.error('Error fetching bookings:', error.response?.data || error.message);
@@ -62,71 +102,134 @@ const TouristTrips = () => {
   }, []);
 
   useEffect(() => {
-    const apiKey = 'AIzaSyCTkmhSytYSA7BKiczUFWeFIULe-onuHn0'; // Hardcoded API key
+    const apiKey = 'AIzaSyCTkmhSytYSA7BKiczUFWeFIULe-onuHn0';
     if (!apiKey) {
-      console.error('Google Maps API key is missing.');
-      toast.error('Google Maps API key is missing.', {
-        position: 'top-right',
-        autoClose: 5000,
-      });
+      toast.error('Google Maps API key is missing.', { position: 'top-right', autoClose: 5000 });
       return;
     }
 
     const newSocket = socketIOClient(SOCKET_SERVER, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
       console.log('Socket.IO connected:', newSocket.id);
+      if (currentTrip?.status === 'confirmed') {
+        newSocket.emit('joinBooking', currentTrip.id);
+        fetchLocations(currentTrip.id);
+      }
+    });
+
+    newSocket.on('reconnect', () => {
+      console.log('Socket.IO reconnected');
+      if (currentTrip?.status === 'confirmed') {
+        newSocket.emit('joinBooking', currentTrip.id);
+        fetchLocations(currentTrip.id);
+      }
     });
 
     newSocket.on('connect_error', (err) => {
       console.error('Socket.IO connection error:', err.message);
-      toast.error('Failed to connect to real-time server. Location updates may not work.', {
-        position: 'top-right',
-        autoClose: 5000,
-      });
+      toast.error('Failed to connect to real-time server.', { position: 'top-right', autoClose: 5000 });
     });
 
     newSocket.on('locationUpdate', ({ bookingId, role, latitude, longitude }) => {
-      if (currentTrip && bookingId === currentTrip.id) {
+      if (currentTrip && bookingId === currentTrip.id && isValidLocation({ lat: latitude, lng: longitude })) {
+        const updateKey = `${bookingId}-${role}`;
+        const lastUpdate = lastUpdateRef.current[updateKey] || 0;
+        if (Date.now() - lastUpdate < 1000) {
+          console.log(`Skipping duplicate location update for ${role} in booking ${bookingId}`);
+          return;
+        }
+        lastUpdateRef.current[updateKey] = Date.now();
+
+        console.log(`Received location update for ${role} in booking ${bookingId}: ${latitude}, ${longitude}`);
         if (role === 'guide') {
           setGuideLocation({ lat: latitude, lng: longitude });
         } else if (role === 'tourist') {
           setTouristLocation({ lat: latitude, lng: longitude });
         }
+        fetchLocations(bookingId); // Re-fetch to ensure consistency
+      }
+    });
+
+    newSocket.on('bookingStatusUpdate', async ({ bookingId, status, locations }) => {
+      if (status === 'confirmed' && currentTrip?.id === bookingId) {
+        setCurrentTrip((prev) => ({ ...prev, status }));
+        if (locations && isValidLocation({ lat: locations.guide.latitude, lng: locations.guide.longitude }) &&
+            isValidLocation({ lat: locations.tourist.latitude, lng: locations.tourist.longitude })) {
+          setGuideLocation({ lat: locations.guide.latitude, lng: locations.guide.longitude });
+          setTouristLocation({ lat: locations.tourist.latitude, lng: locations.tourist.longitude });
+        }
+        await fetchLocations(bookingId);
+        toast.success(`Booking ${bookingId} has been confirmed!`, { position: 'top-right', autoClose: 3000 });
+      }
+    });
+
+    newSocket.on('requestTouristLocation', ({ bookingId }) => {
+      if (currentTrip && bookingId === currentTrip.id) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            if (isValidLocation({ lat: latitude, lng: longitude })) {
+              const updateKey = `${bookingId}-tourist`;
+              const lastUpdate = lastUpdateRef.current[updateKey] || 0;
+              if (Date.now() - lastUpdate < 1000) {
+                console.log(`Skipping duplicate tourist location request for booking ${bookingId}`);
+                return;
+              }
+              lastUpdateRef.current[updateKey] = Date.now();
+
+              newSocket.emit('updateLocation', { bookingId, role: 'tourist', latitude, longitude });
+              setTouristLocation({ lat: latitude, lng: longitude });
+              fetchLocations(bookingId); // Re-fetch to ensure server consistency
+            }
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            toast.error('Unable to retrieve location. Using default coordinates.', {
+              position: 'top-right',
+              autoClose: 5000,
+            });
+            setTouristLocation({ lat: 7.8731, lng: 80.7718 });
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
       }
     });
 
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [currentTrip]);
 
   useEffect(() => {
-    if (socket && currentTrip && currentTrip.status === 'confirmed') {
-      socket.emit('joinBooking', currentTrip.id);
-    }
-  }, [socket, currentTrip]);
-
-  useEffect(() => {
-    if (socket && currentTrip && currentTrip.status === 'confirmed') {
+    if (socket && currentTrip?.status === 'confirmed') {
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          socket.emit('updateLocation', {
-            bookingId: currentTrip.id,
-            role: 'tourist',
-            latitude,
-            longitude,
-          });
-          setTouristLocation({ lat: latitude, lng: longitude });
+          if (isValidLocation({ lat: latitude, lng: longitude })) {
+            const updateKey = `${currentTrip.id}-tourist`;
+            const lastUpdate = lastUpdateRef.current[updateKey] || 0;
+            if (Date.now() - lastUpdate < 1000) {
+              console.log(`Skipping duplicate geolocation update for booking ${currentTrip.id}`);
+              return;
+            }
+            lastUpdateRef.current[updateKey] = Date.now();
+
+            socket.emit('updateLocation', { bookingId: currentTrip.id, role: 'tourist', latitude, longitude });
+            setTouristLocation({ lat: latitude, lng: longitude });
+            fetchLocations(currentTrip.id); // Re-fetch to ensure server consistency
+          }
         },
         (error) => {
           console.error('Geolocation error:', error);
-          toast.error('Unable to retrieve location. Please ensure location services are enabled.', {
+          toast.error('Unable to retrieve location. Using default coordinates.', {
             position: 'top-right',
             autoClose: 5000,
           });
@@ -140,7 +243,7 @@ const TouristTrips = () => {
   }, [socket, currentTrip]);
 
   useEffect(() => {
-    if (mapRef.current && touristLocation && guideLocation) {
+    if (mapRef.current && isValidLocation(touristLocation) && isValidLocation(guideLocation)) {
       if (directionsRenderer.current) {
         directionsRenderer.current.setMap(null);
       }
@@ -163,16 +266,16 @@ const TouristTrips = () => {
             directionsRenderer.current = renderer;
           } else {
             console.error('Directions request failed:', status);
+            toast.error('Failed to load directions.', { position: 'top-right', autoClose: 5000 });
           }
         }
       );
-    }
 
-    return () => {
-      if (directionsRenderer.current) {
-        directionsRenderer.current.setMap(null);
-      }
-    };
+      const bounds = new window.google.maps.LatLngBounds();
+      bounds.extend(touristLocation);
+      bounds.extend(guideLocation);
+      mapRef.current.fitBounds(bounds);
+    }
   }, [touristLocation, guideLocation]);
 
   return (
@@ -184,9 +287,7 @@ const TouristTrips = () => {
           <div className="flex border-b border-accent">
             <button
               className={`flex-1 py-3 px-4 text-lg font-semibold text-center transition-colors duration-300 ${
-                activeTab === 'current'
-                  ? 'bg-travelBlue text-white'
-                  : 'bg-white text-gray-600 hover:bg-accent'
+                activeTab === 'current' ? 'bg-travelBlue text-white' : 'bg-white text-gray-600 hover:bg-accent'
               }`}
               onClick={() => setActiveTab('current')}
             >
@@ -194,9 +295,7 @@ const TouristTrips = () => {
             </button>
             <button
               className={`flex-1 py-3 px-4 text-lg font-semibold text-center transition-colors duration-300 ${
-                activeTab === 'history'
-                  ? 'bg-travelBlue text-white'
-                  : 'bg-white text-gray-600 hover:bg-accent'
+                activeTab === 'history' ? 'bg-travelBlue text-white' : 'bg-white text-gray-600 hover:bg-accent'
               }`}
               onClick={() => setActiveTab('history')}
             >
@@ -226,33 +325,33 @@ const TouristTrips = () => {
                 </p>
                 {currentTrip.status === 'confirmed' && (
                   <APIProvider apiKey="AIzaSyCTkmhSytYSA7BKiczUFWeFIULe-onuHn0" libraries={['places']}>
-                    <div className="mt-4">
-                      <h3 className="text-md font-medium mb-2">Live Locations & Directions</h3>
-                      <Map
-                        style={{ width: '100%', height: '400px' }}
-                        defaultZoom={12}
-                        defaultCenter={
-                          touristLocation || guideLocation || { lat: 7.8731, lng: 80.7718 }
-                        }
-                        mapId="bea008e60f890fd9160a10a0" // Replace with your actual Map ID
-                        ref={mapRef}
-                      >
-                        {touristLocation && (
-                          <AdvancedMarker position={touristLocation}>
-                            <div style={{ background: 'blue', color: 'white', padding: '5px' }}>
-                              You (Tourist)
-                            </div>
-                          </AdvancedMarker>
+                    <ErrorBoundary>
+                      <div className="mt-4">
+                        <h3 className="text-md font-medium mb-2">Live Locations & Directions</h3>
+                        {isValidLocation(touristLocation) && isValidLocation(guideLocation) ? (
+                          <Map
+                            style={{ width: '100%', height: '400px' }}
+                            defaultZoom={12}
+                            defaultCenter={touristLocation}
+                            mapId="bea008e60f890fd9160a10a0"
+                            ref={mapRef}
+                          >
+                            <AdvancedMarker position={touristLocation}>
+                              <div style={{ background: 'blue', color: 'white', padding: '5px' }}>
+                                You (Tourist)
+                              </div>
+                            </AdvancedMarker>
+                            <AdvancedMarker position={guideLocation}>
+                              <div style={{ background: 'green', color: 'white', padding: '5px' }}>
+                                Guide: {currentTrip.guide_name || 'Guide'}
+                              </div>
+                            </AdvancedMarker>
+                          </Map>
+                        ) : (
+                          <div className="text-gray-500 text-center p-4">Waiting for location data...</div>
                         )}
-                        {guideLocation && (
-                          <AdvancedMarker position={guideLocation}>
-                            <div style={{ background: 'green', color: 'white', padding: '5px' }}>
-                              Guide: {currentTrip.guide_name || 'Guide'}
-                            </div>
-                          </AdvancedMarker>
-                        )}
-                      </Map>
-                    </div>
+                      </div>
+                    </ErrorBoundary>
                   </APIProvider>
                 )}
               </div>

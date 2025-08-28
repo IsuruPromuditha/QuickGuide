@@ -98,7 +98,7 @@ const getBookings = async (req, res) => {
         try {
           if (Array.isArray(booking.destinations)) {
             if (booking.destinations.every(dest => typeof dest === 'string' && dest.trim())) {
-              processedDestinations = booking.destinations; // Use the array directly
+              processedDestinations = booking.destinations;
             } else {
               console.warn(`Invalid destinations array for booking ID ${booking.id}: ${JSON.stringify(booking.destinations)}`);
             }
@@ -114,12 +114,12 @@ const getBookings = async (req, res) => {
           }
         } catch (e) {
           console.error(`Failed to process destinations for booking ID ${booking.id}: ${JSON.stringify(booking.destinations)}`, e.message);
-          processedDestinations = []; 
+          processedDestinations = [];
         }
 
         return {
           ...booking,
-          destinations: processedDestinations 
+          destinations: processedDestinations
         };
       });
 
@@ -192,8 +192,9 @@ const getTouristBookings = async (req, res) => {
 
 const updateBookingStatus = async (req, res) => {
   const { id } = req.params;
-  const { status, decline_reason } = req.body;
+  const { status, decline_reason, guideLatitude, guideLongitude } = req.body;
   const guide_id = req.user.id;
+  const io = req.app.get('io');
 
   if (!status || !['confirmed', 'cancelled', 'completed'].includes(status)) {
     return res.status(400).json({ error: 'Valid status is required (confirmed, cancelled, or completed)' });
@@ -205,8 +206,11 @@ const updateBookingStatus = async (req, res) => {
 
   try {
     const bookingCheck = await new Promise((resolve, reject) => {
-      db.query('SELECT guide_id FROM Bookings WHERE id = ?', [id], (err, results) => {
-        if (err) reject(err);
+      db.query('SELECT guide_id, tourist_id, start_location FROM Bookings WHERE id = ?', [id], (err, results) => {
+        if (err) {
+          console.error('Database error checking booking:', err.message);
+          reject(err);
+        }
         resolve(results);
       });
     });
@@ -219,26 +223,172 @@ const updateBookingStatus = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized to update this booking' });
     }
 
-    const query = `
+    const updateBookingQuery = `
       UPDATE Bookings 
       SET status = ?, decline_reason = ?
       WHERE id = ?
     `;
 
-    db.query(query, [status, decline_reason || null, id], (err, result) => {
-      if (err) {
-        console.error('Database error:', err.message);
-        return res.status(500).json({ error: 'Database error: ' + err.message });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Booking not found' });
-      }
-      res.status(200).json({ message: `Booking ${status} successfully` });
+    await new Promise((resolve, reject) => {
+      db.query(updateBookingQuery, [status, decline_reason || null, id], (err, result) => {
+        if (err) {
+          console.error('Database error updating booking:', err.message);
+          return reject(err);
+        }
+        if (result.affectedRows === 0) {
+          return reject(new Error('Booking not found'));
+        }
+        resolve(result);
+      });
     });
+
+    if (status === 'confirmed') {
+      const tourist_id = bookingCheck[0].tourist_id;
+      const defaultLat = 7.8731;
+      const defaultLng = 80.7718;
+
+      if (!Number.isFinite(guideLatitude) || !Number.isFinite(guideLongitude)) {
+        return res.status(400).json({ error: 'Guide location must have valid numeric latitude and longitude' });
+      }
+
+      const insertLocationQuery = `
+        INSERT INTO Locations (booking_id, user_id, role, latitude, longitude, updated_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE latitude = ?, longitude = ?, updated_at = NOW()
+      `;
+
+      await new Promise((resolve, reject) => {
+        db.query(
+          insertLocationQuery,
+          [id, guide_id, 'guide', guideLatitude, guideLongitude, guideLatitude, guideLongitude],
+          (err) => {
+            if (err) {
+              console.error('Database error inserting guide location:', err.message);
+              return reject(err);
+            }
+            resolve();
+          }
+        );
+      });
+
+      // Fetch or set tourist location
+      let touristLocation = await new Promise((resolve) => {
+        db.query(
+          'SELECT latitude, longitude FROM Locations WHERE booking_id = ? AND role = ?',
+          [id, 'tourist'],
+          (err, results) => {
+            if (err) {
+              console.error('Error fetching tourist location:', err.message);
+              resolve({ latitude: defaultLat, longitude: defaultLng });
+            } else {
+              resolve(results.length > 0 ? results[0] : { latitude: defaultLat, longitude: defaultLng });
+            }
+          }
+        );
+      });
+
+      const touristLat = Number.isFinite(touristLocation.latitude) ? parseFloat(touristLocation.latitude) : defaultLat;
+      const touristLng = Number.isFinite(touristLocation.longitude) ? parseFloat(touristLocation.longitude) : defaultLng;
+
+      await new Promise((resolve, reject) => {
+        db.query(
+          insertLocationQuery,
+          [id, tourist_id, 'tourist', touristLat, touristLng, touristLat, touristLng],
+          (err) => {
+            if (err) {
+              console.error('Database error inserting tourist location:', err.message);
+              return reject(err);
+            }
+            resolve();
+          }
+        );
+      });
+
+      const locations = {
+        guide: { latitude: parseFloat(guideLatitude), longitude: parseFloat(guideLongitude) },
+        tourist: { latitude: touristLat, longitude: touristLng }
+      };
+
+      console.log(`Broadcasting location data for booking ${id}:`, JSON.stringify(locations, null, 2));
+
+      io.to(id).emit('bookingStatusUpdate', { bookingId: id, status, locations });
+      io.to(id).emit('locationUpdate', { bookingId: id, role: 'guide', latitude: guideLatitude, longitude: guideLongitude });
+      io.to(id).emit('requestTouristLocation', { bookingId: id });
+
+      res.status(200).json({ message: `Booking ${status} successfully`, locations });
+    } else {
+      io.to(id).emit('bookingStatusUpdate', { bookingId: id, status });
+      res.status(200).json({ message: `Booking ${status} successfully` });
+    }
   } catch (error) {
-    console.error('Server error:', error.message);
+    console.error('Server error updating booking status:', error.message);
     res.status(500).json({ error: 'Server error: ' + error.message });
   }
 };
 
-module.exports = { createBooking, getBookings, updateBookingStatus, getTouristBookings };
+const getBookingLocations = async (req, res) => {
+  const { bookingId } = req.params;
+  const user_id = req.user.id;
+
+  try {
+    const bookingCheck = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT id, guide_id, tourist_id FROM Bookings WHERE id = ? AND (guide_id = ? OR tourist_id = ?)',
+        [bookingId, user_id, user_id],
+        (err, results) => {
+          if (err) {
+            console.error('Database error checking booking:', err.message);
+            reject(err);
+          }
+          resolve(results);
+        }
+      );
+    });
+
+    if (bookingCheck.length === 0) {
+      return res.status(404).json({ error: 'Booking not found or unauthorized' });
+    }
+
+    const locations = await new Promise((resolve, reject) => {
+      db.query(
+        'SELECT user_id, role, latitude, longitude FROM Locations WHERE booking_id = ?',
+        [bookingId],
+        (err, results) => {
+          if (err) {
+            console.error('Database error fetching locations:', err.message);
+            reject(err);
+          }
+          resolve(results);
+        }
+      );
+    });
+
+    const defaultLat = 7.8731;
+    const defaultLng = 80.7718;
+    const locationData = {
+      guide: locations.find(loc => loc.role === 'guide') || { latitude: defaultLat, longitude: defaultLng },
+      tourist: locations.find(loc => loc.role === 'tourist') || { latitude: defaultLat, longitude: defaultLng }
+    };
+
+    // Convert latitude and longitude to numbers
+    locationData.guide.latitude = parseFloat(locationData.guide.latitude);
+    locationData.guide.longitude = parseFloat(locationData.guide.longitude);
+    locationData.tourist.latitude = parseFloat(locationData.tourist.latitude);
+    locationData.tourist.longitude = parseFloat(locationData.tourist.longitude);
+
+    if (!Number.isFinite(locationData.guide.latitude) || !Number.isFinite(locationData.guide.longitude) ||
+        !Number.isFinite(locationData.tourist.latitude) || !Number.isFinite(locationData.tourist.longitude)) {
+      console.warn(`Invalid coordinates for booking ${bookingId}:`, JSON.stringify(locationData, null, 2));
+      locationData.guide = { latitude: defaultLat, longitude: defaultLng };
+      locationData.tourist = { latitude: defaultLat, longitude: defaultLng };
+    }
+
+    console.log(`Returning location data for booking ${bookingId}:`, JSON.stringify(locationData, null, 2));
+    res.status(200).json(locationData);
+  } catch (error) {
+    console.error('Server error in getBookingLocations:', error.message);
+    res.status(500).json({ error: 'Server error: ' + error.message });
+  }
+};
+
+module.exports = { createBooking, getBookings, updateBookingStatus, getTouristBookings, getBookingLocations };

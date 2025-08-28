@@ -8,6 +8,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const socialMediaRoutes = require('./routes/socialMediaRoutes');
 const adminManageGuidesRoutes = require('./routes/adminManageGuidesRoutes');
 const translateRoutes = require('./routes/translateRoutes');
+const guideLeaderBoardRoutes = require('./routes/guideLeaderBoardRoutes');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -50,6 +51,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/socialmedia', socialMediaRoutes);
 app.use('/api/adminManageGuides', adminManageGuidesRoutes);
 app.use('/api/translate', translateRoutes);
+app.use('/api/guide-leaderboard', guideLeaderBoardRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

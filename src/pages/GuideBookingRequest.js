@@ -416,7 +416,7 @@ const GuideBookingRequest = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutralBg">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-green-100">
       <ToastContainer />
       <div className="p-6 mx-auto max-w-7xl">
         <h1 className="text-3xl font-bold mb-6 text-primary">Booking Requests</h1>

@@ -31,6 +31,7 @@ import AdminLogin from './pages/AdminLogin';
 import TouristTrips from './pages/TouristTrips';
 import TouristTripDetails from './pages/TouristTripDetails';
 import GuideSocialMediaGroups from './pages/GuideSocialMediaGroups';
+import GuideLeaderBoard from './pages/GuideLeaderBoard';
 
 const ProtectedRoute = ({ children, role }) => {
   const token = localStorage.getItem('token');
@@ -163,6 +164,15 @@ function App() {
               <>
                 <Navbar />
                 <Leaderboard />
+              </>
+            }
+          />
+                    <Route
+            path="/guide-leaderboard"
+            element={
+              <>
+                <GuideNavbar />
+                <GuideLeaderBoard />
               </>
             }
           />

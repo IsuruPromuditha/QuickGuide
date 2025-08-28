@@ -175,7 +175,7 @@ const GuideSocialMediaGroups = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-green-100">
       <div className="p-6 mx-auto max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Social Media Groups</h1>

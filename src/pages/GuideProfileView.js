@@ -270,7 +270,7 @@ const GuideProfileView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-green-100">
       <div className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="bg-white shadow-lg rounded-xl p-6 mb-6">

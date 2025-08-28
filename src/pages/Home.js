@@ -3,6 +3,7 @@ import { FaGlobe, FaSearch, FaUserTie, FaUsers } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { motion } from 'framer-motion';
+import axios from 'axios'; // Add Axios import
 
 import coverImage from '../assets/HomeBG.jpg';
 import Anuradhapura from '../assets/Anuradhapura.jpg';
@@ -12,6 +13,12 @@ import destination3 from '../assets/Mirissa.jpg';
 const Home = () => {
   const sliderImages = [Anuradhapura, destination2, destination3, Anuradhapura, destination2, destination3, destination2, destination3];
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Add states for translation
+  const [sourceText, setSourceText] = useState(''); // Input text
+  const [translatedText, setTranslatedText] = useState(''); // Translated output
+  const [sourceLang] = useState('en'); // Fixed to English for simplicity
+  const [targetLang, setTargetLang] = useState('si'); // Default to Sinhala
+  const [loading, setLoading] = useState(false); // Loading state for API call
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -32,6 +39,28 @@ const Home = () => {
       }
     }
   }, []);
+
+  // Function to handle translation API call
+  const handleTranslate = async () => {
+    if (!sourceText.trim()) {
+      alert('Please enter text to translate');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/api/translate', {
+        text: sourceText,
+        sourceLang,
+        targetLang,
+      });
+      setTranslatedText(response.data.translatedText);
+    } catch (error) {
+      console.error('Translation error:', error);
+      alert('Failed to translate. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -75,24 +104,56 @@ const Home = () => {
         variants={fadeInUp}
         className="max-w-4xl mx-auto mt-12 px-4 sm:px-6"
       >
-        <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col md:flex-row gap-6 items-center border border-gray-100">
-          <div className="flex items-center gap-3 w-full md:w-1/2">
+        {/* --- Google Translate Section --- */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6 border border-gray-100">
+          <div className="flex items-center gap-3">
             <FaGlobe className="text-blue-500 text-2xl" />
             <span className="font-semibold text-gray-700">From: English</span>
           </div>
-          <div className="flex items-center gap-3 w-full md:w-1/2">
+          <textarea
+            className="w-full h-24 p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Enter text to translate..."
+            value={sourceText}
+            onChange={(e) => setSourceText(e.target.value)}
+          />
+          <div className="flex items-center gap-3">
             <FaGlobe className="text-green-500 text-2xl" />
-            <span className="font-semibold text-gray-700">To: Sinhala / Tamil</span>
+            <span className="font-semibold text-gray-700">To:</span>
+            <select
+              className="border border-gray-200 rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+              value={targetLang}
+              onChange={(e) => setTargetLang(e.target.value)}
+            >
+              <option value="si">Sinhala</option>
+              <option value="ta">Tamil</option>
+            </select>
           </div>
-          <div className="w-full mt-4 md:mt-0">
-            <div className="flex items-center border border-gray-200 rounded-xl px-4 py-2 bg-gray-50 focus-within:ring-2 focus-within:ring-primary transition">
-              <FaSearch className="text-gray-400 mr-3" />
-              <input
-                type="text"
-                placeholder="Search your destination or guide..."
-                className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-400"
-              />
-            </div>
+          <textarea
+            className="w-full h-24 p-4 border border-gray-200 rounded-xl resize-none bg-gray-50"
+            placeholder="Translated text will appear here..."
+            value={translatedText}
+            readOnly
+          />
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleTranslate}
+            disabled={loading || !sourceText.trim()}
+            className="bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-secondary transition duration-300 shadow-md disabled:opacity-50"
+          >
+            {loading ? 'Translating...' : 'Translate'}
+          </motion.button>
+        </div>
+
+        {/* --- Search Section --- */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mt-6 border border-gray-100">
+          <div className="flex items-center border border-gray-200 rounded-xl px-4 py-2 bg-gray-50 focus-within:ring-2 focus-within:ring-primary transition">
+            <FaSearch className="text-gray-400 mr-3" />
+            <input
+              type="text"
+              placeholder="Search your destination or guide..."
+              className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-400"
+            />
           </div>
         </div>
       </motion.div>

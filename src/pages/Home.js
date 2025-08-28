@@ -3,7 +3,7 @@ import { FaGlobe, FaSearch, FaUserTie, FaUsers } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { motion } from 'framer-motion';
-import axios from 'axios'; // Add Axios import
+import axios from 'axios';
 
 import coverImage from '../assets/HomeBG.jpg';
 import Anuradhapura from '../assets/Anuradhapura.jpg';
@@ -13,13 +13,32 @@ import destination3 from '../assets/Mirissa.jpg';
 const Home = () => {
   const sliderImages = [Anuradhapura, destination2, destination3, Anuradhapura, destination2, destination3, destination2, destination3];
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // Add states for translation
-  const [sourceText, setSourceText] = useState(''); // Input text
-  const [translatedText, setTranslatedText] = useState(''); // Translated output
-  const [sourceLang] = useState('en'); // Fixed to English for simplicity
-  const [targetLang, setTargetLang] = useState('si'); // Default to Sinhala
-  const [loading, setLoading] = useState(false); // Loading state for API call
+  const [sourceText, setSourceText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [sourceLang, setSourceLang] = useState('auto'); 
+  const [targetLang, setTargetLang] = useState('si'); 
+  const [loading, setLoading] = useState(false);
+  const [languages, setLanguages] = useState([]); 
 
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/translate/languages');
+        setLanguages(response.data);
+      } catch (error) {
+        console.error('Error fetching languages:', error);
+        alert('Failed to load languages. Using defaults.');
+        setLanguages([
+          { code: 'en', name: 'English' },
+          { code: 'si', name: 'Sinhala' },
+          { code: 'ta', name: 'Tamil' },
+        ]);
+      }
+    };
+    fetchLanguages();
+  }, []);
+
+  // Check JWT token
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -40,7 +59,7 @@ const Home = () => {
     }
   }, []);
 
-  // Function to handle translation API call
+  // Handle translation
   const handleTranslate = async () => {
     if (!sourceText.trim()) {
       alert('Please enter text to translate');
@@ -108,7 +127,19 @@ const Home = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6 border border-gray-100">
           <div className="flex items-center gap-3">
             <FaGlobe className="text-blue-500 text-2xl" />
-            <span className="font-semibold text-gray-700">From: English</span>
+            <span className="font-semibold text-gray-700">From:</span>
+            <select
+              className="border border-gray-200 rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+              value={sourceLang}
+              onChange={(e) => setSourceLang(e.target.value)}
+            >
+              <option value="auto">Detect Language</option>
+              {languages.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </option>
+              ))}
+            </select>
           </div>
           <textarea
             className="w-full h-24 p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary"
@@ -124,8 +155,11 @@ const Home = () => {
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value)}
             >
-              <option value="si">Sinhala</option>
-              <option value="ta">Tamil</option>
+              {languages.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </option>
+              ))}
             </select>
           </div>
           <textarea
@@ -249,7 +283,6 @@ const Home = () => {
         </div>
       </motion.div>
 
-      {/* Connect with Social Groups Section */}
       <motion.div
         initial="hidden"
         animate="visible"

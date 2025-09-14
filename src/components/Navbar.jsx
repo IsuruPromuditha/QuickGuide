@@ -23,6 +23,7 @@ const Navbar = () => {
     ...(isLoggedIn ? [
       { id: 4, title: 'Find a Guide', link: '/guides' },
       { id: 5, title: 'Social', link: '/tourist-socialgroup' },
+      { id: 6, title: 'LeaderBoard', link: '/tourist-leaderboard' },
     ] : []),
   ];
 

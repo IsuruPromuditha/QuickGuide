@@ -9,6 +9,7 @@ const socialMediaRoutes = require('./routes/socialMediaRoutes');
 const adminManageGuidesRoutes = require('./routes/adminManageGuidesRoutes');
 const translateRoutes = require('./routes/translateRoutes');
 const guideLeaderBoardRoutes = require('./routes/guideLeaderBoardRoutes');
+const touristLeaderBoardRoutes = require('./routes/touristsLeaderBoardRoutes');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -52,6 +53,7 @@ app.use('/api/socialmedia', socialMediaRoutes);
 app.use('/api/adminManageGuides', adminManageGuidesRoutes);
 app.use('/api/translate', translateRoutes);
 app.use('/api/guide-leaderboard', guideLeaderBoardRoutes);
+app.use('/api/tourist-leaderboard', touristLeaderBoardRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

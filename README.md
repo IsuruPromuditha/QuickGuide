@@ -1,3 +1,51 @@
+# 🇱🇰 QuickGuide Sri Lanka — Tourism & Tour Guide Management System
+
+[![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-Backend-green?style=for-the-badge&logo=node.js)](https://nodejs.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-Database-blue?style=for-the-badge&logo=mysql)](https://www.mysql.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38BDF8?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+
+**QuickGuide Sri Lanka** is a web platform developed as an undergraduate research project. It connects travelers with certified local tour guides, streamlines itinerary planning, and provides structured management tools for Sri Lanka's digital tourism industry.
+
+---
+
+## 🔥 Key Features
+
+### 🌴 Traveler Portal
+* **Verified Guide Booking:** Search, filter, and connect with licensed local tour guides based on location, language, and specialty.
+* **Interactive Destination Exploration:** Discover curated Sri Lankan travel destinations, attractions, and hidden gems.
+* **Smart Itinerary Planner:** Custom travel scheduling tailored for tourists visiting Sri Lanka.
+
+### 💼 Tour Guide & Admin Dashboard
+* **Guide Profiles & Verification:** Dedicated dashboard for guides to showcase credentials, manage availability, and handle booking requests.
+* **Platform Management:** Central administrative interface for monitoring user accounts, verifying guide applications, and managing platform content.
+* **Booking Lifecycle Tracking:** End-to-end management from initial booking request to tour completion.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React, Tailwind CSS, Lucide React
+* **Backend:** Node.js, Express.js
+* **Database:** MySQL
+* **Authentication & Security:** JWT (JSON Web Tokens), bcrypt
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Ensure you have the following installed on your machine:
+* **Node.js** (v18 or higher)
+* **MySQL Server**
+
+### Local Setup Instructions
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/IsuruPromuditha/QuickGuide-SriLanka.git](https://github.com/IsuruPromuditha/QuickGuide-SriLanka.git)
+   cd QuickGuide-SriLanka
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -68,3 +116,5 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
